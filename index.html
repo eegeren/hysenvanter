@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
@@ -199,6 +199,9 @@
         <p class="meta">Formu doldur, kaydet. Satıra tıklayıp düzenleyebilirsin.</p>
         <form id="asset-form">
           <div class="form-grid">
+            <label>Yetki şifresi
+              <input id="admin-password" type="password" placeholder="Şifre olmadan kaydet/güncelle/sil yapılamaz" autocomplete="off">
+            </label>
             <label>Tür
               <select name="tur" required>
                 <option value="PC">PC</option>
@@ -243,7 +246,7 @@
             <button type="submit" id="submit-btn">Kaydet</button>
             <button type="button" class="ghost" id="reset-form">Temizle</button>
           </div>
-          <p class="hint">Veriler tarayıcınızın yerel depolamasında tutulur.</p>
+          <p class="hint">Veriler tarayıcınızın yerel depolamasında tutulur. Şifreyi girmeden kaydet/güncelle/sil veya sıfırlama yapılamaz.</p>
         </form>
       </section>
 
@@ -273,6 +276,7 @@
 
   <script>
     const storageKey = "hys_envanter_kayitlari";
+    const ADMIN_PASSWORD = "1234";
     let assets = [];
     let editId = null;
 
@@ -354,6 +358,16 @@
       document.getElementById("submit-btn").textContent = "Kaydet";
     }
 
+    function requirePassword() {
+      const input = document.getElementById("admin-password");
+      const value = (input?.value || "").trim();
+      const ok = value === ADMIN_PASSWORD;
+      if (!ok) {
+        alert("Yetkili işlem için şifre gerekli.");
+      }
+      return ok;
+    }
+
     function formToObject(form) {
       const data = new FormData(form);
       return Object.fromEntries(data.entries());
@@ -376,6 +390,7 @@
 
     function handleFormSubmit(e) {
       e.preventDefault();
+      if (!requirePassword()) return;
       const payload = formToObject(e.target);
       upsertAsset(payload);
     }
@@ -401,6 +416,7 @@
       }
 
       if (action === "delete") {
+        if (!requirePassword()) return;
         assets = assets.filter(a => a.id !== id);
         persist();
         renderTable();
@@ -446,6 +462,7 @@
     document.getElementById("asset-body").addEventListener("click", handleRowClick);
     document.getElementById("reset-form").addEventListener("click", resetForm);
     document.getElementById("clear-storage").addEventListener("click", () => {
+      if (!requirePassword()) return;
       if (confirm("Yerel kayıtları silmek istediğinize emin misiniz?")) {
         localStorage.removeItem(storageKey);
         assets = [];
