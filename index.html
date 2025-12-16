@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HYS Envanter Listesi</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+    :root {
+      --ink: #0f172a;
+      --paper: #f8fafc;
+      --muted: #475569;
+      --line: #e2e8f0;
+      --accent: #0ea5e9;
+      --accent-2: #22c55e;
+      --danger: #ef4444;
+      --shadow: 0 12px 30px rgba(15,23,42,0.14);
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Space Grotesk", "Sora", system-ui, sans-serif;
+      background: radial-gradient(circle at 14% 18%, rgba(14,165,233,0.08), transparent 32%),
+        radial-gradient(circle at 88% 6%, rgba(34,197,94,0.08), transparent 30%),
+        linear-gradient(135deg, #0b1220, #0b172b 40%, #0a1020);
+      color: #e2e8f0;
+      padding: 28px;
+    }
+
+    .wrap { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+
+    header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    h1 { margin: 0; font-size: 32px; letter-spacing: -0.3px; }
+    .lede { margin: 6px 0 0; color: var(--muted); max-width: 640px; }
+
+    .pill {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(226,232,240,0.25);
+      background: rgba(255,255,255,0.06);
+      color: #e2e8f0;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      font-size: 12px;
+    }
+
+    .controls {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(226,232,240,0.12);
+      border-radius: var(--radius);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: var(--shadow);
+    }
+
+    .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+    label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #cbd5e1; }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid rgba(226,232,240,0.22);
+      background: rgba(8,13,26,0.88);
+      color: #e2e8f0;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 14px;
+      transition: border-color 0.14s ease, transform 0.1s ease;
+    }
+
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); transform: translateY(-1px); }
+
+    .buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    button {
+      border: none;
+      cursor: pointer;
+      border-radius: 12px;
+      padding: 11px 14px;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.2px;
+      color: #0b1220;
+      background: var(--accent);
+      box-shadow: 0 10px 20px rgba(14,165,233,0.25);
+      transition: transform 0.12s ease, filter 0.16s ease;
+    }
+
+    button:hover { transform: translateY(-1px); filter: brightness(1.06); }
+    button:active { transform: translateY(1px); }
+
+    .ghost { background: rgba(255,255,255,0.07); color: #e2e8f0; box-shadow: none; border: 1px solid rgba(226,232,240,0.16); }
+    .danger { background: var(--danger); color: #0b1220; }
+
+    select option {
+      background: #0b1526;
+      color: #e2e8f0;
+    }
+
+    .grid { display: grid; grid-template-columns: 340px 1fr; gap: 14px; align-items: start; }
+
+    .panel {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(226,232,240,0.12);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .panel h2 { margin: 0 0 8px; font-size: 18px; }
+    .panel .meta { margin: 0 0 14px; color: var(--muted); font-size: 13px; }
+
+    .form-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+
+    textarea { resize: vertical; min-height: 72px; }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: rgba(255,255,255,0.05); position: sticky; top: 0; z-index: 1; }
+    th, td { padding: 11px 10px; text-align: left; font-size: 13px; border-bottom: 1px solid rgba(226,232,240,0.14); }
+    tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+    .badge { border-radius: 10px; padding: 6px 9px; font-weight: 700; font-size: 12px; display: inline-block; }
+    .badge.stok { background: rgba(34,197,94,0.16); color: #4ade80; }
+    .badge.kullanimda { background: rgba(14,165,233,0.16); color: #7dd3fc; }
+    .badge.beklemede { background: rgba(234,179,8,0.16); color: #fbbf24; }
+    .badge.arizali { background: rgba(239,68,68,0.18); color: #fca5a5; }
+
+    .row-actions { display: inline-flex; gap: 6px; }
+    .row-actions .ghost { padding: 7px 10px; font-size: 12px; }
+
+    .hint { margin-top: 8px; color: var(--muted); font-size: 12px; }
+
+    @media (max-width: 960px) {
+      .grid { grid-template-columns: 1fr; }
+      body { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>HYS Envanter</h1>
+        <p class="lede">Karmaşık paneller olmadan, kaydet ve basit listede gör.</p>
+      </div>
+      <span class="pill" id="last-sync">Son kayıt: yerel</span>
+    </header>
+
+    <section class="controls">
+      <div class="filters">
+        <label>Tür
+          <select id="filter-type">
+            <option value="">Hepsi</option>
+            <option value="PC">PC</option>
+            <option value="Mouse">Mouse</option>
+            <option value="Toner">Toner</option>
+            <option value="Telefon">Telefon</option>
+            <option value="Hat">Hat / SIM</option>
+            <option value="Diğer">Diğer</option>
+          </select>
+        </label>
+        <label>Durum
+          <select id="filter-status">
+            <option value="">Hepsi</option>
+            <option value="Stokta">Stokta</option>
+            <option value="Kullanımda">Kullanımda</option>
+            <option value="Beklemede">Beklemede</option>
+            <option value="Arızalı">Arızalı</option>
+          </select>
+        </label>
+        <label>Arama
+          <input id="filter-search" placeholder="model, seri, atanan, konum">
+        </label>
+      </div>
+      <div class="buttons">
+        <button id="export-json" type="button">Dışa aktar (JSON)</button>
+        <button class="ghost" id="import-json" type="button">İçe aktar</button>
+        <button class="ghost danger" id="clear-storage" type="button">Yereli sıfırla</button>
+        <input type="file" id="import-file" accept="application/json" style="display:none;">
+      </div>
+    </section>
+
+    <div class="grid">
+      <section class="panel">
+        <h2>Kayıt ekle / düzenle</h2>
+        <p class="meta">Formu doldur, kaydet. Satıra tıklayıp düzenleyebilirsin.</p>
+        <form id="asset-form">
+          <div class="form-grid">
+            <label>Tür
+              <select name="tur" required>
+                <option value="PC">PC</option>
+                <option value="Mouse">Mouse</option>
+                <option value="Toner">Toner</option>
+                <option value="Telefon">Telefon</option>
+                <option value="Hat">Hat / SIM</option>
+                <option value="Diğer">Diğer</option>
+              </select>
+            </label>
+            <label>Marka / Model
+              <input name="model" required placeholder="Örn: Dell 7010, Logitech MX">
+            </label>
+            <label>Seri / Hat No
+              <input name="seri" required placeholder="Seri ya da hat numarası">
+            </label>
+            <label>Atanan / Sahibi
+              <input name="atanan" placeholder="Kime ait?">
+            </label>
+            <label>Departman
+              <input name="departman" placeholder="Operasyon, IT, Satış...">
+            </label>
+            <label>Durum
+              <select name="durum" required>
+                <option value="Stokta">Stokta</option>
+                <option value="Kullanımda">Kullanımda</option>
+                <option value="Beklemede">Beklemede</option>
+                <option value="Arızalı">Arızalı</option>
+              </select>
+            </label>
+            <label>Konum
+              <input name="konum" placeholder="Ofis, depo, saha...">
+            </label>
+            <label>Tarih
+              <input name="tarih" type="date">
+            </label>
+            <label>Not
+              <textarea name="not" placeholder="Teslim bilgisi, arıza detayı..."></textarea>
+            </label>
+          </div>
+          <div class="buttons" style="margin-top:10px;">
+            <button type="submit" id="submit-btn">Kaydet</button>
+            <button type="button" class="ghost" id="reset-form">Temizle</button>
+          </div>
+          <p class="hint">Veriler tarayıcınızın yerel depolamasında tutulur.</p>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>Liste</h2>
+        <div class="meta">Basit tablo görünümü.</div>
+        <div style="overflow:auto; max-height: 70vh;">
+          <table>
+            <thead>
+              <tr>
+                <th>Model</th>
+                <th>Seri / Hat</th>
+                <th>Tür</th>
+                <th>Atanan</th>
+                <th>Durum</th>
+                <th>Konum</th>
+                <th>Tarih</th>
+                <th>İşlem</th>
+              </tr>
+            </thead>
+            <tbody id="asset-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const storageKey = "hys_envanter_kayitlari";
+    let assets = [];
+    let editId = null;
+
+    function statusClass(durum = "") {
+      switch (durum) {
+        case "Stokta": return "stok";
+        case "Kullanımda": return "kullanimda";
+        case "Arızalı": return "arizali";
+        default: return "beklemede";
+      }
+    }
+
+    function updateSyncLabel(text) {
+      document.getElementById("last-sync").textContent = text;
+    }
+
+    function loadAssets() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(storageKey));
+        assets = Array.isArray(saved) ? saved : [];
+        updateSyncLabel("Son kayıt: yerel");
+      } catch (_) {
+        assets = [];
+        updateSyncLabel("Son kayıt: okunamadı");
+      }
+      renderTable();
+    }
+
+    function persist() {
+      localStorage.setItem(storageKey, JSON.stringify(assets));
+      updateSyncLabel(`Son kayıt: ${new Date().toLocaleString("tr-TR")}`);
+    }
+
+    function rowMatchesFilters(item) {
+      const type = document.getElementById("filter-type").value;
+      const status = document.getElementById("filter-status").value;
+      const search = document.getElementById("filter-search").value.toLowerCase().trim();
+
+      if (type && item.tur !== type) return false;
+      if (status && item.durum !== status) return false;
+      if (search) {
+        const hay = [item.model, item.seri, item.atanan, item.konum, item.departman].join(" ").toLowerCase();
+        if (!hay.includes(search)) return false;
+      }
+      return true;
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById("asset-body");
+      const filtered = assets.filter(rowMatchesFilters).sort((a, b) => (b.tarih || "").localeCompare(a.tarih || ""));
+
+      if (!filtered.length) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:14px;">Kayıt yok.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(item => `
+        <tr data-id="${item.id}">
+          <td>${item.model || "-"}</td>
+          <td>${item.seri || "-"}</td>
+          <td>${item.tur || "-"}</td>
+          <td>${item.atanan || "-"}</td>
+          <td><span class="badge ${statusClass(item.durum)}">${item.durum || "-"}</span></td>
+          <td>${item.konum || "-"}</td>
+          <td>${item.tarih || "-"}</td>
+          <td>
+            <span class="row-actions">
+              <button class="ghost" data-action="edit" type="button">Düzenle</button>
+              <button class="ghost danger" data-action="delete" type="button">Sil</button>
+            </span>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function resetForm() {
+      document.getElementById("asset-form").reset();
+      editId = null;
+      document.getElementById("submit-btn").textContent = "Kaydet";
+    }
+
+    function formToObject(form) {
+      const data = new FormData(form);
+      return Object.fromEntries(data.entries());
+    }
+
+    function upsertAsset(obj) {
+      obj.seri = (obj.seri || "").trim();
+      obj.model = (obj.model || "").trim();
+      obj.atanan = (obj.atanan || "").trim();
+
+      if (editId) {
+        assets = assets.map(item => item.id === editId ? { ...item, ...obj } : item);
+      } else {
+        assets.push({ id: crypto.randomUUID(), ...obj });
+      }
+      persist();
+      renderTable();
+      resetForm();
+    }
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      const payload = formToObject(e.target);
+      upsertAsset(payload);
+    }
+
+    function handleRowClick(e) {
+      const btn = e.target.closest("button[data-action]");
+      if (!btn) return;
+      const action = btn.getAttribute("data-action");
+      const row = btn.closest("tr");
+      const id = row?.getAttribute("data-id");
+      if (!id) return;
+
+      if (action === "edit") {
+        const item = assets.find(a => a.id === id);
+        if (!item) return;
+        const form = document.getElementById("asset-form");
+        for (const key of ["tur","model","seri","atanan","departman","durum","konum","tarih","not"]) {
+          if (form.elements[key]) form.elements[key].value = item[key] || "";
+        }
+        editId = id;
+        document.getElementById("submit-btn").textContent = "Güncelle";
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      if (action === "delete") {
+        assets = assets.filter(a => a.id !== id);
+        persist();
+        renderTable();
+      }
+    }
+
+    function exportJson() {
+      const blob = new Blob([JSON.stringify(assets, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `hys-envanter-${new Date().toISOString().split("T")[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function validAsset(obj) {
+      return obj && typeof obj === "object" && obj.tur && obj.model && obj.seri;
+    }
+
+    function importJsonFile(file) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (!Array.isArray(parsed) || !parsed.every(validAsset)) throw new Error("Geçersiz format");
+          if (!confirm(`İçe aktarılacak ${parsed.length} kayıt mevcut verinin üstüne yazacak. Devam?`)) return;
+          assets = parsed.map(item => ({ id: item.id || crypto.randomUUID(), ...item }));
+          persist();
+          renderTable();
+          resetForm();
+          alert("Veriler içe aktarıldı.");
+        } catch (err) {
+          alert("JSON okunamadı: " + err.message);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    document.getElementById("asset-form").addEventListener("submit", handleFormSubmit);
+    document.getElementById("asset-body").addEventListener("click", handleRowClick);
+    document.getElementById("reset-form").addEventListener("click", resetForm);
+    document.getElementById("clear-storage").addEventListener("click", () => {
+      if (confirm("Yerel kayıtları silmek istediğinize emin misiniz?")) {
+        localStorage.removeItem(storageKey);
+        assets = [];
+        renderTable();
+        resetForm();
+        updateSyncLabel("Son kayıt: sıfırlandı");
+      }
+    });
+
+    document.getElementById("export-json").addEventListener("click", exportJson);
+    document.getElementById("import-json").addEventListener("click", () => document.getElementById("import-file").click());
+    document.getElementById("import-file").addEventListener("change", (e) => {
+      const file = e.target.files?.[0];
+      if (file) importJsonFile(file);
+      e.target.value = "";
+    });
+
+    for (const id of ["filter-type","filter-status","filter-search"]) {
+      const el = document.getElementById(id);
+      el.addEventListener("input", renderTable);
+      el.addEventListener("change", renderTable);
+    }
+
+    loadAssets();
+  </script>
+</body>
+</html>
