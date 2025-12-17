@@ -1,15 +1,16 @@
-// /api/assets.js
-import { sql } from '@vercel/postgres';
-import { randomUUID } from 'node:crypto';
+import { Pool } from "pg";
+import { randomUUID } from "node:crypto";
 
-function json(res, status, data) {
-  res.statusCode = status;
-  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+const pool = new Pool({ connectionString: process.env.POSTGRES_URL });
+
+function send(res, code, data) {
+  res.statusCode = code;
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.end(JSON.stringify(data));
 }
 
 async function ensureTable() {
-  await sql`
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS assets (
       id TEXT PRIMARY KEY,
       tur TEXT NOT NULL,
@@ -23,84 +24,85 @@ async function ensureTable() {
       not TEXT,
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
-  `;
+  `);
 }
 
 function requireAdmin(req, res) {
-  const pass = (req.headers['x-admin-password'] || '').toString().trim();
+  const pass = String(req.headers["x-admin-password"] || "").trim();
   if (!process.env.ADMIN_PASSWORD || pass !== process.env.ADMIN_PASSWORD) {
-    json(res, 401, { error: 'Yetkisiz işlem (şifre).' });
+    send(res, 401, { error: "Yetkisiz işlem." });
     return false;
   }
   return true;
 }
 
 export default async function handler(req, res) {
-  await ensureTable();
-
-  if (req.method === 'GET') {
-    const { rows } = await sql`
-      SELECT * FROM assets
-      ORDER BY (tarih IS NULL), tarih DESC, updated_at DESC;
-    `;
-    return json(res, 200, rows);
-  }
-
-  // JSON body parse
-  let body = {};
   try {
-    body = req.body && typeof req.body === 'object' ? req.body : JSON.parse(req.body || '{}');
-  } catch {
-    body = {};
+    await ensureTable();
+
+    if (req.method === "GET") {
+      const { rows } = await pool.query(
+        `SELECT * FROM assets
+         ORDER BY (tarih IS NULL), tarih DESC, updated_at DESC`
+      );
+      return send(res, 200, rows);
+    }
+
+    let body = {};
+    try {
+      body = req.body && typeof req.body === "object" ? req.body : JSON.parse(req.body || "{}");
+    } catch {}
+
+    if (req.method === "POST") {
+      if (!requireAdmin(req, res)) return;
+
+      const id = (body.id || "").trim() || randomUUID();
+      const tur = (body.tur || "").trim();
+      const model = (body.model || "").trim();
+      const seri = (body.seri || "").trim();
+      if (!tur || !model || !seri) return send(res, 400, { error: "tur/model/seri zorunlu." });
+
+      const atanan = (body.atanan || "").trim();
+      const departman = (body.departman || "").trim();
+      const durum = (body.durum || "").trim();
+      const konum = (body.konum || "").trim();
+      const tarih = body.tarih || null;
+      const nott = (body.not || "").trim();
+
+      const { rows } = await pool.query(
+        `INSERT INTO assets (id,tur,model,seri,atanan,departman,durum,konum,tarih,not)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+         ON CONFLICT (id) DO UPDATE SET
+           tur=EXCLUDED.tur,
+           model=EXCLUDED.model,
+           seri=EXCLUDED.seri,
+           atanan=EXCLUDED.atanan,
+           departman=EXCLUDED.departman,
+           durum=EXCLUDED.durum,
+           konum=EXCLUDED.konum,
+           tarih=EXCLUDED.tarih,
+           not=EXCLUDED.not,
+           updated_at=NOW()
+         RETURNING *`,
+        [id, tur, model, seri, atanan, departman, durum, konum, tarih, nott]
+      );
+
+      return send(res, 200, rows[0]);
+    }
+
+    if (req.method === "DELETE") {
+      if (!requireAdmin(req, res)) return;
+
+      const id = String(req.query?.id || body.id || "").trim();
+      if (!id) return send(res, 400, { error: "id gerekli." });
+
+      await pool.query(`DELETE FROM assets WHERE id=$1`, [id]);
+      return send(res, 200, { ok: true });
+    }
+
+    res.statusCode = 405;
+    res.end("Method Not Allowed");
+  } catch (e) {
+    return send(res, 500, { error: "Server error", detail: String(e?.message || e) });
   }
-
-  if (req.method === 'POST') {
-    if (!requireAdmin(req, res)) return;
-
-    const id = (body.id || '').trim() || randomUUID();
-    const tur = (body.tur || '').trim();
-    const model = (body.model || '').trim();
-    const seri = (body.seri || '').trim();
-
-    if (!tur || !model || !seri) return json(res, 400, { error: 'tur/model/seri zorunlu.' });
-
-    const atanan = (body.atanan || '').trim();
-    const departman = (body.departman || '').trim();
-    const durum = (body.durum || '').trim();
-    const konum = (body.konum || '').trim();
-    const tarih = body.tarih || null;
-    const nott = (body.not || '').trim();
-
-    const { rows } = await sql`
-      INSERT INTO assets (id, tur, model, seri, atanan, departman, durum, konum, tarih, not)
-      VALUES (${id}, ${tur}, ${model}, ${seri}, ${atanan}, ${departman}, ${durum}, ${konum}, ${tarih}, ${nott})
-      ON CONFLICT (id) DO UPDATE SET
-        tur = EXCLUDED.tur,
-        model = EXCLUDED.model,
-        seri = EXCLUDED.seri,
-        atanan = EXCLUDED.atanan,
-        departman = EXCLUDED.departman,
-        durum = EXCLUDED.durum,
-        konum = EXCLUDED.konum,
-        tarih = EXCLUDED.tarih,
-        not = EXCLUDED.not,
-        updated_at = NOW()
-      RETURNING *;
-    `;
-    return json(res, 200, rows[0]);
-  }
-
-  if (req.method === 'DELETE') {
-    if (!requireAdmin(req, res)) return;
-
-    // tek kayıt silme
-    const id = (req.query?.id || body.id || '').toString().trim();
-    if (!id) return json(res, 400, { error: 'id gerekli.' });
-
-    await sql`DELETE FROM assets WHERE id = ${id};`;
-    return json(res, 200, { ok: true });
-  }
-
-  res.statusCode = 405;
-  res.end('Method Not Allowed');
 }
