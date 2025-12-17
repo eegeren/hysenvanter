@@ -156,7 +156,7 @@
         <h1>HYS Envanter</h1>
         <p class="lede">Karmaşık paneller olmadan, kaydet ve basit listede gör.</p>
       </div>
-      <span class="pill" id="last-sync">Son kayıt: yerel</span>
+      <span class="pill" id="last-sync">Son kayıt: yükleniyor</span>
     </header>
 
     <section class="controls">
@@ -188,7 +188,7 @@
       <div class="buttons">
         <button id="export-json" type="button">Dışa aktar (JSON)</button>
         <button class="ghost" id="import-json" type="button">İçe aktar</button>
-        <button class="ghost danger" id="clear-storage" type="button">Yereli sıfırla</button>
+        <button class="ghost danger" id="clear-storage" type="button">Veritabanını sıfırla</button>
         <input type="file" id="import-file" accept="application/json" style="display:none;">
       </div>
     </section>
@@ -200,7 +200,7 @@
         <form id="asset-form">
           <div class="form-grid">
             <label>Yetki şifresi
-              <input id="admin-password" type="password" placeholder="Şifre olmadan kaydet/güncelle/sil yapılamaz" autocomplete="off">
+              <input id="admin-password" type="password" placeholder="Kaydet/Güncelle/Sil için gerekli" autocomplete="off">
             </label>
             <label>Tür
               <select name="tur" required>
@@ -246,7 +246,7 @@
             <button type="submit" id="submit-btn">Kaydet</button>
             <button type="button" class="ghost" id="reset-form">Temizle</button>
           </div>
-          <p class="hint">Veriler tarayıcınızın yerel depolamasında tutulur. Şifreyi girmeden kaydet/güncelle/sil veya sıfırlama yapılamaz.</p>
+          <p class="hint">Veriler veritabanında tutulur. Kaydet/Güncelle/Sil/Sıfırla işlemleri için şifre gerekir.</p>
         </form>
       </section>
 
@@ -275,8 +275,6 @@
   </div>
 
   <script>
-    const storageKey = "hys_envanter_kayitlari";
-    const ADMIN_PASSWORD = "1234";
     let assets = [];
     let editId = null;
 
@@ -293,21 +291,54 @@
       document.getElementById("last-sync").textContent = text;
     }
 
-    function loadAssets() {
-      try {
-        const saved = JSON.parse(localStorage.getItem(storageKey));
-        assets = Array.isArray(saved) ? saved : [];
-        updateSyncLabel("Son kayıt: yerel");
-      } catch (_) {
-        assets = [];
-        updateSyncLabel("Son kayıt: okunamadı");
+    function getAdminPassword() {
+      const input = document.getElementById("admin-password");
+      const value = (input?.value || "").trim();
+      if (!value) {
+        alert("Yetkili işlem için şifre gerekli.");
+        return null;
       }
-      renderTable();
+      return value;
     }
 
-    function persist() {
-      localStorage.setItem(storageKey, JSON.stringify(assets));
-      updateSyncLabel(`Son kayıt: ${new Date().toLocaleString("tr-TR")}`);
+    async function apiGetAssets() {
+      const r = await fetch("/api/assets", { method: "GET" });
+      if (!r.ok) throw new Error("Liste alınamadı");
+      return await r.json();
+    }
+
+    async function apiUpsertAssets(items, adminPass) {
+      const r = await fetch("/api/assets", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-password": adminPass
+        },
+        body: JSON.stringify(items)
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data?.error || "Kayıt yapılamadı");
+      return data;
+    }
+
+    async function apiDeleteAsset(id, adminPass) {
+      const r = await fetch(`/api/assets?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: { "x-admin-password": adminPass }
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data?.error || "Silinemedi");
+      return data;
+    }
+
+    async function apiClearAll(adminPass) {
+      const r = await fetch(`/api/assets`, {
+        method: "DELETE",
+        headers: { "x-admin-password": adminPass }
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data?.error || "Sıfırlanamadı");
+      return data;
     }
 
     function rowMatchesFilters(item) {
@@ -326,7 +357,9 @@
 
     function renderTable() {
       const tbody = document.getElementById("asset-body");
-      const filtered = assets.filter(rowMatchesFilters).sort((a, b) => (b.tarih || "").localeCompare(a.tarih || ""));
+      const filtered = assets
+        .filter(rowMatchesFilters)
+        .sort((a, b) => (b.tarih || "").localeCompare(a.tarih || ""));
 
       if (!filtered.length) {
         tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:14px;">Kayıt yok.</td></tr>';
@@ -358,46 +391,47 @@
       document.getElementById("submit-btn").textContent = "Kaydet";
     }
 
-    function requirePassword() {
-      const input = document.getElementById("admin-password");
-      const value = (input?.value || "").trim();
-      const ok = value === ADMIN_PASSWORD;
-      if (!ok) {
-        alert("Yetkili işlem için şifre gerekli.");
-      }
-      return ok;
-    }
-
     function formToObject(form) {
       const data = new FormData(form);
       return Object.fromEntries(data.entries());
     }
 
-    function upsertAsset(obj) {
-      obj.seri = (obj.seri || "").trim();
-      obj.model = (obj.model || "").trim();
-      obj.atanan = (obj.atanan || "").trim();
-
-      if (editId) {
-        assets = assets.map(item => item.id === editId ? { ...item, ...obj } : item);
-      } else {
-        assets.push({ id: crypto.randomUUID(), ...obj });
+    async function loadAssets() {
+      try {
+        updateSyncLabel("Yükleniyor...");
+        assets = await apiGetAssets();
+        updateSyncLabel("Son kayıt: veritabanı");
+      } catch (e) {
+        updateSyncLabel("Son kayıt: okunamadı");
+        alert("Kayıtlar yüklenemedi: " + e.message);
+        assets = [];
       }
-      persist();
       renderTable();
-      resetForm();
     }
 
-    function handleFormSubmit(e) {
+    async function handleFormSubmit(e) {
       e.preventDefault();
-      if (!requirePassword()) return;
+
+      const adminPass = getAdminPassword();
+      if (!adminPass) return;
+
       const payload = formToObject(e.target);
-      upsertAsset(payload);
+      if (editId) payload.id = editId;
+
+      try {
+        await apiUpsertAssets(payload, adminPass);
+        updateSyncLabel(`Son kayıt: ${new Date().toLocaleString("tr-TR")}`);
+        await loadAssets();
+        resetForm();
+      } catch (err) {
+        alert(err.message);
+      }
     }
 
     function handleRowClick(e) {
       const btn = e.target.closest("button[data-action]");
       if (!btn) return;
+
       const action = btn.getAttribute("data-action");
       const row = btn.closest("tr");
       const id = row?.getAttribute("data-id");
@@ -416,10 +450,19 @@
       }
 
       if (action === "delete") {
-        if (!requirePassword()) return;
-        assets = assets.filter(a => a.id !== id);
-        persist();
-        renderTable();
+        (async () => {
+          const adminPass = getAdminPassword();
+          if (!adminPass) return;
+          if (!confirm("Bu kaydı silmek istediğinize emin misiniz?")) return;
+
+          try {
+            await apiDeleteAsset(id, adminPass);
+            updateSyncLabel(`Son kayıt: ${new Date().toLocaleString("tr-TR")}`);
+            await loadAssets();
+          } catch (err) {
+            alert(err.message);
+          }
+        })();
       }
     }
 
@@ -441,14 +484,19 @@
 
     function importJsonFile(file) {
       const reader = new FileReader();
-      reader.onload = e => {
+      reader.onload = async (e) => {
         try {
           const parsed = JSON.parse(e.target.result);
           if (!Array.isArray(parsed) || !parsed.every(validAsset)) throw new Error("Geçersiz format");
-          if (!confirm(`İçe aktarılacak ${parsed.length} kayıt mevcut verinin üstüne yazacak. Devam?`)) return;
-          assets = parsed.map(item => ({ id: item.id || crypto.randomUUID(), ...item }));
-          persist();
-          renderTable();
+
+          const adminPass = getAdminPassword();
+          if (!adminPass) return;
+
+          if (!confirm(`İçe aktarılacak ${parsed.length} kayıt veritabanına yazılacak. Devam?`)) return;
+
+          await apiUpsertAssets(parsed, adminPass);
+          updateSyncLabel(`Son kayıt: ${new Date().toLocaleString("tr-TR")}`);
+          await loadAssets();
           resetForm();
           alert("Veriler içe aktarıldı.");
         } catch (err) {
@@ -461,15 +509,22 @@
     document.getElementById("asset-form").addEventListener("submit", handleFormSubmit);
     document.getElementById("asset-body").addEventListener("click", handleRowClick);
     document.getElementById("reset-form").addEventListener("click", resetForm);
+
     document.getElementById("clear-storage").addEventListener("click", () => {
-      if (!requirePassword()) return;
-      if (confirm("Yerel kayıtları silmek istediğinize emin misiniz?")) {
-        localStorage.removeItem(storageKey);
-        assets = [];
-        renderTable();
-        resetForm();
-        updateSyncLabel("Son kayıt: sıfırlandı");
-      }
+      (async () => {
+        const adminPass = getAdminPassword();
+        if (!adminPass) return;
+        if (!confirm("Tüm veritabanı kayıtlarını silmek istediğinize emin misiniz?")) return;
+
+        try {
+          await apiClearAll(adminPass);
+          updateSyncLabel("Son kayıt: sıfırlandı");
+          await loadAssets();
+          resetForm();
+        } catch (err) {
+          alert(err.message);
+        }
+      })();
     });
 
     document.getElementById("export-json").addEventListener("click", exportJson);
