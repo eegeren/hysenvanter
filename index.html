@@ -600,7 +600,7 @@
   async function apiUpsertAssets(items, adminPass) {
     const r = await fetch("/api/assets", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-admin-password": adminPass },
+      headers: { "Content-Type": "application/json", "x-admin-password": encodeURIComponent(adminPass) },
       body: JSON.stringify(items)
     });
     const data = await r.json().catch(() => ({}));
@@ -611,7 +611,7 @@
   async function apiDeleteAsset(id, adminPass) {
     const r = await fetch(`/api/assets?id=${encodeURIComponent(id)}`, {
       method: "DELETE",
-      headers: { "x-admin-password": adminPass }
+      headers: { "x-admin-password": encodeURIComponent(adminPass) }
     });
     const data = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(data?.error || "Silinemedi");
@@ -621,7 +621,7 @@
   async function apiClearAll(adminPass) {
     const r = await fetch("/api/assets", {
       method: "DELETE",
-      headers: { "x-admin-password": adminPass }
+      headers: { "x-admin-password": encodeURIComponent(adminPass) }
     });
     const data = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(data?.error || "Sıfırlanamadı");

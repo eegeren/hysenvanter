@@ -67,7 +67,7 @@ function sortAssets(items) {
 }
 
 function requireAdmin(req, res) {
-  const pass = String(req.headers["x-admin-password"] || "").trim();
+  const pass = decodeURIComponent(String(req.headers["x-admin-password"] || "")).trim();
   const expected = String(process.env.ADMIN_PASSWORD || "admin").trim();
 
   if (!expected || pass !== expected) {
