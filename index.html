@@ -292,6 +292,21 @@
     .badge.beklemede   { background: rgba(245,158,11,0.12); color: #fbbf24; }
     .badge.arizali     { background: rgba(239,68,68,0.12);  color: #f87171; }
 
+    /* ---- GROUP ROWS ---- */
+    tr.group-header td {
+      background: rgba(59,130,246,0.07);
+      border-top: 1px solid rgba(59,130,246,0.2);
+      padding: 10px 16px;
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--text);
+    }
+    tr.group-child td {
+      background: rgba(255,255,255,0.015);
+      padding-left: 28px;
+    }
+    tr.group-child:last-of-type td { border-bottom: 1px solid rgba(59,130,246,0.1); }
+
     /* ---- SERI LIST (grouped rows) ---- */
     .seri-list { display: flex; flex-direction: column; gap: 4px; }
     .seri-item {
@@ -754,24 +769,69 @@
       return;
     }
 
-    tbody.innerHTML = filtered.map(item => `
-      <tr data-id="${item.id}">
-        <td><span class="type-chip">${item.tur || "—"}</span></td>
-        <td class="primary">${item.model || "—"}</td>
-        <td style="font-family:monospace;font-size:12px;">${item.seri || "—"}</td>
-        <td>${item.atanan || "—"}</td>
-        <td>${item.departman || "—"}</td>
-        <td><span class="badge ${statusClass(item.durum)}">${item.durum || "—"}</span></td>
-        <td>${item.konum || "—"}</td>
-        <td style="white-space:nowrap;">${item.tarih || "—"}</td>
-        <td>
-          <div style="display:inline-flex;gap:6px;">
-            <button class="btn btn-ghost btn-sm" data-action="edit" type="button">Düzenle</button>
-            <button class="btn btn-danger btn-sm" data-action="delete" type="button">Sil</button>
-          </div>
-        </td>
-      </tr>
-    `).join("");
+    // Group by atanan
+    const groupMap = new Map();
+    for (const item of filtered) {
+      const key = (item.atanan || "").trim().toLowerCase();
+      if (!groupMap.has(key)) groupMap.set(key, []);
+      groupMap.get(key).push(item);
+    }
+
+    const rows = [];
+    for (const group of groupMap.values()) {
+      if (group.length === 1) {
+        const item = group[0];
+        rows.push(`
+          <tr data-id="${item.id}">
+            <td><span class="type-chip">${item.tur || "—"}</span></td>
+            <td class="primary">${item.model || "—"}</td>
+            <td style="font-family:monospace;font-size:12px;">${item.seri || "—"}</td>
+            <td>${item.atanan || "—"}</td>
+            <td>${item.departman || "—"}</td>
+            <td><span class="badge ${statusClass(item.durum)}">${item.durum || "—"}</span></td>
+            <td>${item.konum || "—"}</td>
+            <td style="white-space:nowrap;">${item.tarih || "—"}</td>
+            <td>
+              <div style="display:inline-flex;gap:6px;">
+                <button class="btn btn-ghost btn-sm" data-action="edit" type="button">Düzenle</button>
+                <button class="btn btn-danger btn-sm" data-action="delete" type="button">Sil</button>
+              </div>
+            </td>
+          </tr>`);
+      } else {
+        const first = group[0];
+        const dept = [...new Set(group.map(it => it.departman).filter(Boolean))].join(", ") || "—";
+        rows.push(`
+          <tr class="group-header">
+            <td colspan="4">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:-2px;margin-right:6px;opacity:0.6"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              ${first.atanan || "—"}
+              <span class="adet-badge">${group.length} cihaz</span>
+            </td>
+            <td colspan="5" style="color:var(--muted);font-weight:400;">${dept}</td>
+          </tr>`);
+        for (const item of group) {
+          rows.push(`
+            <tr class="group-child" data-id="${item.id}">
+              <td><span class="type-chip">${item.tur || "—"}</span></td>
+              <td class="primary">${item.model || "—"}</td>
+              <td style="font-family:monospace;font-size:12px;">${item.seri || "—"}</td>
+              <td></td>
+              <td></td>
+              <td><span class="badge ${statusClass(item.durum)}">${item.durum || "—"}</span></td>
+              <td>${item.konum || "—"}</td>
+              <td style="white-space:nowrap;">${item.tarih || "—"}</td>
+              <td>
+                <div style="display:inline-flex;gap:6px;">
+                  <button class="btn btn-ghost btn-sm" data-action="edit" type="button">Düzenle</button>
+                  <button class="btn btn-danger btn-sm" data-action="delete" type="button">Sil</button>
+                </div>
+              </td>
+            </tr>`);
+        }
+      }
+    }
+    tbody.innerHTML = rows.join("");
   }
 
   /* ---- FORM ---- */
