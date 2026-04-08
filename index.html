@@ -780,57 +780,51 @@
       return;
     }
 
-    // Group by atanan
-    const groupMap = new Map();
-    for (const item of filtered) {
-      const key = (item.atanan || "").trim().toLowerCase();
-      if (!groupMap.has(key)) groupMap.set(key, []);
-      groupMap.get(key).push(item);
-    }
-
     const rows = [];
-    for (const group of groupMap.values()) {
-      if (group.length === 1) {
-        const item = group[0];
-        rows.push(`
-          <tr data-id="${item.id}">
-            <td><span class="type-chip">${item.tur || "—"}</span></td>
-            <td class="primary">${item.model || "—"}</td>
-            <td style="font-family:monospace;font-size:12px;">${item.seri || "—"}</td>
-            <td>${item.atanan || "—"}</td>
-            <td>${item.departman || "—"}</td>
-            <td><span class="badge ${statusClass(item.durum)}">${item.durum || "—"}</span></td>
-            <td>${item.konum || "—"}</td>
-            <td style="white-space:nowrap;">${item.tarih || "—"}</td>
-            <td>
-              <div style="display:inline-flex;gap:6px;">
-                <button class="btn btn-ghost btn-sm" data-action="edit" type="button">Düzenle</button>
-                <button class="btn btn-danger btn-sm" data-action="delete" type="button">Sil</button>
-              </div>
-            </td>
-          </tr>`);
-      } else {
+
+    if (activeType === "Toner") {
+      // Group by model name, show total count per model
+      const tonerMap = new Map();
+      for (const item of filtered) {
+        const key = (item.model || "").trim().toLowerCase();
+        if (!tonerMap.has(key)) tonerMap.set(key, []);
+        tonerMap.get(key).push(item);
+      }
+      for (const group of tonerMap.values()) {
         const first = group[0];
-        const dept = [...new Set(group.map(it => it.departman).filter(Boolean))].join(", ") || "—";
-        const groupId = `grp-${Math.random().toString(36).slice(2)}`;
+        const totalAdet = group.length;
         rows.push(`
-          <tr class="group-header" data-group-id="${groupId}">
-            <td colspan="4">
-              <span class="chevron">&#9654;</span>
-              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:-2px;margin-right:6px;opacity:0.6"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              ${first.atanan || "—"}
-              <span class="adet-badge">${group.length} cihaz</span>
-            </td>
-            <td colspan="5" style="color:var(--muted);font-weight:400;">${dept}</td>
+          <tr>
+            <td><span class="type-chip">${first.tur || "—"}</span></td>
+            <td class="primary">${first.model || "—"}</td>
+            <td style="font-family:monospace;font-size:12px;">—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td style="white-space:nowrap;">—</td>
+            <td><span class="adet-badge">${totalAdet} adet</span></td>
           </tr>`);
-        for (const item of group) {
+      }
+    } else {
+      // Group by atanan
+      const groupMap = new Map();
+      for (const item of filtered) {
+        const key = (item.atanan || "").trim().toLowerCase();
+        if (!groupMap.has(key)) groupMap.set(key, []);
+        groupMap.get(key).push(item);
+      }
+
+      for (const group of groupMap.values()) {
+        if (group.length === 1) {
+          const item = group[0];
           rows.push(`
-            <tr class="group-child hidden" data-group-id="${groupId}" data-id="${item.id}">
+            <tr data-id="${item.id}">
               <td><span class="type-chip">${item.tur || "—"}</span></td>
               <td class="primary">${item.model || "—"}</td>
               <td style="font-family:monospace;font-size:12px;">${item.seri || "—"}</td>
-              <td></td>
-              <td></td>
+              <td>${item.atanan || "—"}</td>
+              <td>${item.departman || "—"}</td>
               <td><span class="badge ${statusClass(item.durum)}">${item.durum || "—"}</span></td>
               <td>${item.konum || "—"}</td>
               <td style="white-space:nowrap;">${item.tarih || "—"}</td>
@@ -841,6 +835,39 @@
                 </div>
               </td>
             </tr>`);
+        } else {
+          const first = group[0];
+          const dept = [...new Set(group.map(it => it.departman).filter(Boolean))].join(", ") || "—";
+          const groupId = `grp-${Math.random().toString(36).slice(2)}`;
+          rows.push(`
+            <tr class="group-header" data-group-id="${groupId}">
+              <td colspan="4">
+                <span class="chevron">&#9654;</span>
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:-2px;margin-right:6px;opacity:0.6"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                ${first.atanan || "—"}
+                <span class="adet-badge">${group.length} cihaz</span>
+              </td>
+              <td colspan="5" style="color:var(--muted);font-weight:400;">${dept}</td>
+            </tr>`);
+          for (const item of group) {
+            rows.push(`
+              <tr class="group-child hidden" data-group-id="${groupId}" data-id="${item.id}">
+                <td><span class="type-chip">${item.tur || "—"}</span></td>
+                <td class="primary">${item.model || "—"}</td>
+                <td style="font-family:monospace;font-size:12px;">${item.seri || "—"}</td>
+                <td></td>
+                <td></td>
+                <td><span class="badge ${statusClass(item.durum)}">${item.durum || "—"}</span></td>
+                <td>${item.konum || "—"}</td>
+                <td style="white-space:nowrap;">${item.tarih || "—"}</td>
+                <td>
+                  <div style="display:inline-flex;gap:6px;">
+                    <button class="btn btn-ghost btn-sm" data-action="edit" type="button">Düzenle</button>
+                    <button class="btn btn-danger btn-sm" data-action="delete" type="button">Sil</button>
+                  </div>
+                </td>
+              </tr>`);
+          }
         }
       }
     }
