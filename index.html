@@ -451,7 +451,7 @@
         <form id="asset-form">
           <div class="form-grid">
             <label class="field">Yetki Şifresi
-              <input id="admin-password" type="password" placeholder="Kaydet/Güncelle/Sil için gerekli" autocomplete="off">
+              <input id="admin-password" type="password" placeholder="Şifre (bir kez girin, oturumda hatırlanır)" autocomplete="off">
             </label>
             <hr class="section-divider">
             <div class="form-row">
@@ -584,10 +584,17 @@
     document.getElementById("stat-arizali").textContent = arizali;
   }
 
+  let _adminPass = "";
+
   function getAdminPassword() {
-    const val = (document.getElementById("admin-password")?.value || "").trim();
-    if (!val) { toast("Yetkili işlem için şifre gerekli.", "error"); return null; }
-    return val;
+    const input = document.getElementById("admin-password");
+    const typed = (input?.value || "").trim();
+    if (typed) {
+      _adminPass = typed;
+      if (input) input.value = "";
+    }
+    if (!_adminPass) { toast("Yetkili işlem için şifre gerekli.", "error"); return null; }
+    return _adminPass;
   }
 
   /* ---- API ---- */
