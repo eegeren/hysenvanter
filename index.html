@@ -553,9 +553,9 @@
         <table>
           <thead>
             <tr>
+              <th>Tür</th>
               <th>Model</th>
               <th>Seri / Hat</th>
-              <th>Tür</th>
               <th>Atanan</th>
               <th>Departman</th>
               <th>Durum</th>
@@ -729,9 +729,9 @@
 
     tbody.innerHTML = filtered.map(item => `
       <tr data-id="${item.id}">
+        <td><span class="type-chip">${item.tur || "—"}</span></td>
         <td class="primary">${item.model || "—"}</td>
         <td style="font-family:monospace;font-size:12px;">${item.seri || "—"}</td>
-        <td><span class="type-chip">${item.tur || "—"}</span></td>
         <td>${item.atanan || "—"}</td>
         <td>${item.departman || "—"}</td>
         <td><span class="badge ${statusClass(item.durum)}">${item.durum || "—"}</span></td>
