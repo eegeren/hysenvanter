@@ -754,61 +754,24 @@
       return;
     }
 
-    // Group by atanan
-    const groups = [];
-    const groupMap = new Map();
-    for (const item of filtered) {
-      const key = (item.atanan || "").trim().toLowerCase();
-      if (!groupMap.has(key)) { groupMap.set(key, []); groups.push(groupMap.get(key)); }
-      groupMap.get(key).push(item);
-    }
-
-    tbody.innerHTML = groups.map(group => {
-      const first = group[0];
-      const multi = group.length > 1;
-
-      const uniq = (fn) => [...new Set(group.map(fn).filter(Boolean))].join(", ") || "—";
-
-      if (multi) {
-        const itemRows = group.map(it => `
-          <span class="seri-item">
-            <span class="type-chip" style="font-size:10px;padding:1px 5px;">${it.tur || "—"}</span>
-            <span style="font-weight:600;color:var(--text);">${it.model || "—"}</span>
-            <span style="color:var(--muted);font-family:monospace;">${it.seri || ""}</span>
-            <button class="btn-icon" data-action="edit" data-id="${it.id}" title="Düzenle">✎</button>
-            <button class="btn-icon del" data-action="delete" data-id="${it.id}" title="Sil">✕</button>
-          </span>`).join("");
-
-        return `
-          <tr>
-            <td colspan="2" class="primary">
-              ${first.atanan || "—"}
-              <span class="adet-badge">${group.length} cihaz</span>
-            </td>
-            <td colspan="5"><div class="seri-list">${itemRows}</div></td>
-            <td>${uniq(it => it.departman)}</td>
-            <td></td>
-          </tr>`;
-      }
-
-      return `
-        <tr data-id="${first.id}">
-          <td><span class="type-chip">${first.tur || "—"}</span></td>
-          <td class="primary">${first.model || "—"}</td>
-          <td style="font-family:monospace;font-size:12px;">${first.seri || "—"}</td>
-          <td>${first.atanan || "—"}</td>
-          <td>${first.departman || "—"}</td>
-          <td><span class="badge ${statusClass(first.durum)}">${first.durum || "—"}</span></td>
-          <td>${first.konum || "—"}</td>
-          <td style="white-space:nowrap;">${first.tarih || "—"}</td>
-          <td>
-            <div style="display:inline-flex;gap:6px;">
-              <button class="btn btn-ghost btn-sm" data-action="edit" data-id="${first.id}" type="button">Düzenle</button>
-              <button class="btn btn-danger btn-sm" data-action="delete" data-id="${first.id}" type="button">Sil</button>
-            </div>
-          </td>
-        </tr>`;
-    }).join("");
+    tbody.innerHTML = filtered.map(item => `
+      <tr data-id="${item.id}">
+        <td><span class="type-chip">${item.tur || "—"}</span></td>
+        <td class="primary">${item.model || "—"}</td>
+        <td style="font-family:monospace;font-size:12px;">${item.seri || "—"}</td>
+        <td>${item.atanan || "—"}</td>
+        <td>${item.departman || "—"}</td>
+        <td><span class="badge ${statusClass(item.durum)}">${item.durum || "—"}</span></td>
+        <td>${item.konum || "—"}</td>
+        <td style="white-space:nowrap;">${item.tarih || "—"}</td>
+        <td>
+          <div style="display:inline-flex;gap:6px;">
+            <button class="btn btn-ghost btn-sm" data-action="edit" type="button">Düzenle</button>
+            <button class="btn btn-danger btn-sm" data-action="delete" type="button">Sil</button>
+          </div>
+        </td>
+      </tr>
+    `).join("");
   }
 
   /* ---- FORM ---- */
