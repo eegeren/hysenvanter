@@ -292,6 +292,33 @@
     .badge.beklemede   { background: rgba(245,158,11,0.12); color: #fbbf24; }
     .badge.arizali     { background: rgba(239,68,68,0.12);  color: #f87171; }
 
+    /* ---- SERI LIST (grouped rows) ---- */
+    .seri-list { display: flex; flex-direction: column; gap: 4px; }
+    .seri-item {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-family: monospace; font-size: 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 2px 6px;
+      white-space: nowrap;
+    }
+    .seri-item .btn-icon {
+      background: none; border: none; cursor: pointer;
+      padding: 1px 3px; border-radius: 4px;
+      font-size: 11px; line-height: 1;
+      color: var(--muted); transition: color 0.15s, background 0.15s;
+    }
+    .seri-item .btn-icon:hover { background: rgba(255,255,255,0.08); color: var(--text); }
+    .seri-item .btn-icon.del:hover { color: var(--red); }
+    .adet-badge {
+      display: inline-block; margin-left: 6px;
+      padding: 1px 7px; border-radius: 999px;
+      font-size: 11px; font-weight: 700;
+      background: rgba(59,130,246,0.15); color: #93c5fd;
+      border: 1px solid rgba(59,130,246,0.25);
+    }
+
     /* ---- TYPE CHIP ---- */
     .type-chip {
       display: inline-block;
@@ -727,24 +754,59 @@
       return;
     }
 
-    tbody.innerHTML = filtered.map(item => `
-      <tr data-id="${item.id}">
-        <td><span class="type-chip">${item.tur || "—"}</span></td>
-        <td class="primary">${item.model || "—"}</td>
-        <td style="font-family:monospace;font-size:12px;">${item.seri || "—"}</td>
-        <td>${item.atanan || "—"}</td>
-        <td>${item.departman || "—"}</td>
-        <td><span class="badge ${statusClass(item.durum)}">${item.durum || "—"}</span></td>
-        <td>${item.konum || "—"}</td>
-        <td style="white-space:nowrap;">${item.tarih || "—"}</td>
+    // Group by model name
+    const groups = [];
+    const groupMap = new Map();
+    for (const item of filtered) {
+      const key = (item.model || "").trim().toLowerCase();
+      if (!groupMap.has(key)) { groupMap.set(key, []); groups.push(groupMap.get(key)); }
+      groupMap.get(key).push(item);
+    }
+
+    tbody.innerHTML = groups.map(group => {
+      const first = group[0];
+      const multi = group.length > 1;
+
+      const uniq = (fn) => [...new Set(group.map(fn).filter(Boolean))].join(", ") || "—";
+
+      const seriCell = multi
+        ? `<div class="seri-list">${group.map(it => `
+            <span class="seri-item">
+              ${it.seri || "—"}
+              <button class="btn-icon" data-action="edit" data-id="${it.id}" title="Düzenle">✎</button>
+              <button class="btn-icon del" data-action="delete" data-id="${it.id}" title="Sil">✕</button>
+            </span>`).join("")}</div>`
+        : `<span style="font-family:monospace;font-size:12px;">${first.seri || "—"}</span>`;
+
+      const modelCell = multi
+        ? `${first.model || "—"}<span class="adet-badge">${group.length} adet</span>`
+        : (first.model || "—");
+
+      const durumCell = multi
+        ? [...new Set(group.map(it => it.durum).filter(Boolean))].map(d => `<span class="badge ${statusClass(d)}">${d}</span>`).join(" ") || "—"
+        : `<span class="badge ${statusClass(first.durum)}">${first.durum || "—"}</span>`;
+
+      const actions = multi ? `<td></td>` : `
         <td>
           <div style="display:inline-flex;gap:6px;">
-            <button class="btn btn-ghost btn-sm" data-action="edit" type="button">Düzenle</button>
-            <button class="btn btn-danger btn-sm" data-action="delete" type="button">Sil</button>
+            <button class="btn btn-ghost btn-sm" data-action="edit" data-id="${first.id}" type="button">Düzenle</button>
+            <button class="btn btn-danger btn-sm" data-action="delete" data-id="${first.id}" type="button">Sil</button>
           </div>
-        </td>
-      </tr>
-    `).join("");
+        </td>`;
+
+      return `
+        <tr ${!multi ? `data-id="${first.id}"` : ""}>
+          <td><span class="type-chip">${first.tur || "—"}</span></td>
+          <td class="primary">${modelCell}</td>
+          <td>${seriCell}</td>
+          <td>${uniq(it => it.atanan)}</td>
+          <td>${uniq(it => it.departman)}</td>
+          <td>${durumCell}</td>
+          <td>${uniq(it => it.konum)}</td>
+          <td style="white-space:nowrap;">${uniq(it => it.tarih)}</td>
+          ${actions}
+        </tr>`;
+    }).join("");
   }
 
   /* ---- FORM ---- */
@@ -821,7 +883,7 @@
     if (!btn) return;
     const action = btn.getAttribute("data-action");
     const row = btn.closest("tr");
-    const id  = row?.getAttribute("data-id");
+    const id  = btn.getAttribute("data-id") || row?.getAttribute("data-id");
     if (!id) return;
 
     if (action === "edit") {
