@@ -338,6 +338,38 @@
 
     /* ---- DIVIDER ---- */
     .section-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+
+    /* ---- CATEGORY TABS ---- */
+    .cat-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .cat-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted-light);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+      user-select: none;
+    }
+    .cat-tab:hover { background: var(--surface-hover); border-color: var(--border-bright); color: var(--text); }
+    .cat-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .cat-tab .cat-count {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.15);
+    }
+    .cat-tab.active .cat-count { background: rgba(255,255,255,0.25); }
   </style>
 </head>
 <body>
@@ -405,18 +437,8 @@
         <input type="file" id="import-file" accept="application/json" style="display:none;">
       </div>
     </div>
+    <div class="cat-tabs" id="cat-tabs"></div>
     <div class="filter-row">
-      <label class="field">Tür
-        <select id="filter-type">
-          <option value="">Tümü</option>
-          <option value="PC">PC</option>
-          <option value="Mouse">Mouse</option>
-          <option value="Toner">Toner</option>
-          <option value="Telefon">Telefon</option>
-          <option value="Hat">Hat / SIM</option>
-          <option value="Diğer">Diğer</option>
-        </select>
-      </label>
       <label class="field">Durum
         <select id="filter-status">
           <option value="">Tümü</option>
@@ -552,6 +574,7 @@
 <script>
   let assets = [];
   let editId = null;
+  let activeType = "";
 
   /* ---- TOAST ---- */
   function toast(msg, type = "info") {
@@ -638,9 +661,36 @@
     return data;
   }
 
+  /* ---- CATEGORY TABS ---- */
+  const CAT_TYPES = ["PC", "Mouse", "Toner", "Telefon", "Hat", "Diğer"];
+
+  function renderCatTabs() {
+    const container = document.getElementById("cat-tabs");
+    const counts = {};
+    for (const a of assets) counts[a.tur] = (counts[a.tur] || 0) + 1;
+
+    const allTypes = ["", ...CAT_TYPES];
+    container.innerHTML = allTypes.map(type => {
+      const label = type || "Tümü";
+      const count = type ? (counts[type] || 0) : assets.length;
+      const active = activeType === type ? "active" : "";
+      return `<button class="cat-tab ${active}" data-type="${type}">
+        ${label}<span class="cat-count">${count}</span>
+      </button>`;
+    }).join("");
+
+    container.querySelectorAll(".cat-tab").forEach(btn => {
+      btn.addEventListener("click", () => {
+        activeType = btn.dataset.type;
+        renderCatTabs();
+        renderTable();
+      });
+    });
+  }
+
   /* ---- FILTER ---- */
   function rowMatchesFilters(item) {
-    const type   = document.getElementById("filter-type").value;
+    const type   = activeType;
     const status = document.getElementById("filter-status").value;
     const search = document.getElementById("filter-search").value.toLowerCase().trim();
     if (type && item.tur !== type) return false;
@@ -723,6 +773,7 @@
       toast("Kayıtlar yüklenemedi: " + e.message, "error");
       assets = [];
     }
+    renderCatTabs();
     renderTable();
   }
 
@@ -863,7 +914,7 @@
     e.target.value = "";
   });
 
-  for (const id of ["filter-type", "filter-status", "filter-search"]) {
+  for (const id of ["filter-status", "filter-search"]) {
     const el = document.getElementById(id);
     el.addEventListener("input",  renderTable);
     el.addEventListener("change", renderTable);
