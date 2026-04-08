@@ -754,11 +754,11 @@
       return;
     }
 
-    // Group by model name
+    // Group by atanan
     const groups = [];
     const groupMap = new Map();
     for (const item of filtered) {
-      const key = (item.model || "").trim().toLowerCase();
+      const key = (item.atanan || "").trim().toLowerCase();
       if (!groupMap.has(key)) { groupMap.set(key, []); groups.push(groupMap.get(key)); }
       groupMap.get(key).push(item);
     }
@@ -769,42 +769,44 @@
 
       const uniq = (fn) => [...new Set(group.map(fn).filter(Boolean))].join(", ") || "—";
 
-      const seriCell = multi
-        ? `<div class="seri-list">${group.map(it => `
-            <span class="seri-item">
-              ${it.seri || "—"}
-              <button class="btn-icon" data-action="edit" data-id="${it.id}" title="Düzenle">✎</button>
-              <button class="btn-icon del" data-action="delete" data-id="${it.id}" title="Sil">✕</button>
-            </span>`).join("")}</div>`
-        : `<span style="font-family:monospace;font-size:12px;">${first.seri || "—"}</span>`;
+      if (multi) {
+        const itemRows = group.map(it => `
+          <span class="seri-item">
+            <span class="type-chip" style="font-size:10px;padding:1px 5px;">${it.tur || "—"}</span>
+            <span style="font-weight:600;color:var(--text);">${it.model || "—"}</span>
+            <span style="color:var(--muted);font-family:monospace;">${it.seri || ""}</span>
+            <button class="btn-icon" data-action="edit" data-id="${it.id}" title="Düzenle">✎</button>
+            <button class="btn-icon del" data-action="delete" data-id="${it.id}" title="Sil">✕</button>
+          </span>`).join("");
 
-      const modelCell = multi
-        ? `${first.model || "—"}<span class="adet-badge">${group.length} adet</span>`
-        : (first.model || "—");
-
-      const durumCell = multi
-        ? [...new Set(group.map(it => it.durum).filter(Boolean))].map(d => `<span class="badge ${statusClass(d)}">${d}</span>`).join(" ") || "—"
-        : `<span class="badge ${statusClass(first.durum)}">${first.durum || "—"}</span>`;
-
-      const actions = multi ? `<td></td>` : `
-        <td>
-          <div style="display:inline-flex;gap:6px;">
-            <button class="btn btn-ghost btn-sm" data-action="edit" data-id="${first.id}" type="button">Düzenle</button>
-            <button class="btn btn-danger btn-sm" data-action="delete" data-id="${first.id}" type="button">Sil</button>
-          </div>
-        </td>`;
+        return `
+          <tr>
+            <td colspan="2" class="primary">
+              ${first.atanan || "—"}
+              <span class="adet-badge">${group.length} cihaz</span>
+            </td>
+            <td colspan="5"><div class="seri-list">${itemRows}</div></td>
+            <td>${uniq(it => it.departman)}</td>
+            <td></td>
+          </tr>`;
+      }
 
       return `
-        <tr ${!multi ? `data-id="${first.id}"` : ""}>
+        <tr data-id="${first.id}">
           <td><span class="type-chip">${first.tur || "—"}</span></td>
-          <td class="primary">${modelCell}</td>
-          <td>${seriCell}</td>
-          <td>${uniq(it => it.atanan)}</td>
-          <td>${uniq(it => it.departman)}</td>
-          <td>${durumCell}</td>
-          <td>${uniq(it => it.konum)}</td>
-          <td style="white-space:nowrap;">${uniq(it => it.tarih)}</td>
-          ${actions}
+          <td class="primary">${first.model || "—"}</td>
+          <td style="font-family:monospace;font-size:12px;">${first.seri || "—"}</td>
+          <td>${first.atanan || "—"}</td>
+          <td>${first.departman || "—"}</td>
+          <td><span class="badge ${statusClass(first.durum)}">${first.durum || "—"}</span></td>
+          <td>${first.konum || "—"}</td>
+          <td style="white-space:nowrap;">${first.tarih || "—"}</td>
+          <td>
+            <div style="display:inline-flex;gap:6px;">
+              <button class="btn btn-ghost btn-sm" data-action="edit" data-id="${first.id}" type="button">Düzenle</button>
+              <button class="btn btn-danger btn-sm" data-action="delete" data-id="${first.id}" type="button">Sil</button>
+            </div>
+          </td>
         </tr>`;
     }).join("");
   }
