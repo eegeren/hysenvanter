@@ -474,6 +474,9 @@
                 </select>
               </label>
             </div>
+            <label class="field" id="adet-field">Adet
+              <input name="adet" type="number" min="1" max="100" value="1" placeholder="1">
+            </label>
             <label class="field">Marka / Model
               <input name="model" required placeholder="Örn: Dell OptiPlex 7010">
             </label>
@@ -701,6 +704,7 @@
       <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
       Kaydet`;
     document.getElementById("edit-indicator").classList.remove("active");
+    document.getElementById("adet-field").style.display = "";
   }
 
   function formToObject(form) {
@@ -729,6 +733,8 @@
     if (!adminPass) return;
 
     const payload = formToObject(e.target);
+    const adet = editId ? 1 : Math.max(1, Math.min(100, parseInt(payload.adet) || 1));
+    delete payload.adet;
     if (editId) payload.id = editId;
 
     const btn = document.getElementById("submit-btn");
@@ -736,9 +742,18 @@
     btn.style.opacity = "0.6";
 
     try {
-      await apiUpsertAssets(payload, adminPass);
+      let items;
+      if (adet === 1) {
+        items = payload;
+      } else {
+        items = Array.from({ length: adet }, (_, i) => ({
+          ...payload,
+          seri: payload.seri ? `${payload.seri}-${i + 1}` : payload.seri
+        }));
+      }
+      await apiUpsertAssets(items, adminPass);
       updateSyncLabel(`Son kayıt: ${new Date().toLocaleString("tr-TR")}`);
-      toast(editId ? "Kayıt güncellendi." : "Yeni kayıt eklendi.", "success");
+      toast(editId ? "Kayıt güncellendi." : adet > 1 ? `${adet} kayıt eklendi.` : "Yeni kayıt eklendi.", "success");
       await loadAssets();
       resetForm();
     } catch (err) {
@@ -769,6 +784,7 @@
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
         Güncelle`;
       document.getElementById("edit-indicator").classList.add("active");
+      document.getElementById("adet-field").style.display = "none";
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
