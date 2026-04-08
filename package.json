@@ -1,0 +1,8 @@
+{
+  "name": "hys-envanter",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "pg": "^8.12.0"
+  }
+}

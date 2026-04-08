@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HYS Envanter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #060d1a;
+      --surface: rgba(255,255,255,0.04);
+      --surface-hover: rgba(255,255,255,0.07);
+      --border: rgba(255,255,255,0.09);
+      --border-bright: rgba(255,255,255,0.18);
+      --text: #f1f5f9;
+      --muted: #64748b;
+      --muted-light: #94a3b8;
+      --accent: #3b82f6;
+      --accent-glow: rgba(59,130,246,0.3);
+      --green: #22c55e;
+      --green-glow: rgba(34,197,94,0.25);
+      --yellow: #f59e0b;
+      --red: #ef4444;
+      --red-glow: rgba(239,68,68,0.25);
+      --purple: #a855f7;
+      --radius-sm: 8px;
+      --radius: 12px;
+      --radius-lg: 16px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      background-image:
+        radial-gradient(ellipse 60% 40% at 10% 0%, rgba(59,130,246,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 90% 10%, rgba(168,85,247,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 60% at 50% 100%, rgba(34,197,94,0.05) 0%, transparent 60%);
+    }
+
+    /* ---- TOAST ---- */
+    #toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .toast {
+      padding: 12px 18px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-weight: 500;
+      border: 1px solid var(--border-bright);
+      backdrop-filter: blur(20px);
+      animation: slide-in 0.25s ease forwards;
+      max-width: 320px;
+    }
+    .toast.success { background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.4); color: #86efac; }
+    .toast.error   { background: rgba(239,68,68,0.15);  border-color: rgba(239,68,68,0.4);  color: #fca5a5; }
+    .toast.info    { background: rgba(59,130,246,0.15); border-color: rgba(59,130,246,0.4); color: #93c5fd; }
+    @keyframes slide-in {
+      from { opacity: 0; transform: translateX(20px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes fade-out {
+      to { opacity: 0; transform: translateX(20px); }
+    }
+
+    /* ---- LAYOUT ---- */
+    .page { max-width: 1320px; margin: 0 auto; padding: 32px 24px 64px; display: flex; flex-direction: column; gap: 24px; }
+
+    /* ---- HEADER ---- */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .header-brand { display: flex; align-items: center; gap: 14px; }
+    .logo {
+      width: 44px; height: 44px;
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; font-weight: 800; color: #fff;
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+    .header-title h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+    .header-title p  { font-size: 13px; color: var(--muted-light); margin-top: 2px; }
+    .sync-badge {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 14px;
+      border-radius: 999px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      font-size: 12px; font-weight: 500; color: var(--muted-light);
+    }
+    .sync-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green-glow);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; }
+      50%      { opacity: 0.4; }
+    }
+
+    /* ---- STAT CARDS ---- */
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: border-color 0.2s, transform 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--stat-color, var(--accent));
+      opacity: 0.7;
+    }
+    .stat-card:hover { border-color: var(--border-bright); transform: translateY(-2px); }
+    .stat-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; }
+    .stat-value { font-size: 32px; font-weight: 800; letter-spacing: -1px; color: var(--stat-color, var(--text)); }
+    .stat-sub   { font-size: 12px; color: var(--muted); }
+
+    .stat-total  { --stat-color: var(--accent); }
+    .stat-stok   { --stat-color: var(--green); }
+    .stat-kullanimda { --stat-color: #38bdf8; }
+    .stat-arizali    { --stat-color: var(--red); }
+
+    /* ---- CONTROLS ---- */
+    .controls {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .controls-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .controls-label { font-size: 13px; font-weight: 600; color: var(--muted-light); }
+    .filter-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+    .btn-row    { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    label.field { display: flex; flex-direction: column; gap: 5px; font-size: 12px; font-weight: 500; color: var(--muted-light); }
+
+    input, select, textarea {
+      width: 100%;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 9px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-family: inherit;
+      transition: border-color 0.15s;
+      appearance: none;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    select option { background: #0d1929; }
+    textarea { resize: vertical; min-height: 70px; }
+
+    /* ---- BUTTONS ---- */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      border: none; cursor: pointer;
+      border-radius: var(--radius-sm);
+      padding: 9px 16px;
+      font-size: 13px; font-weight: 600; font-family: inherit;
+      transition: transform 0.12s, filter 0.15s, box-shadow 0.15s;
+      white-space: nowrap;
+    }
+    .btn:hover  { transform: translateY(-1px); filter: brightness(1.08); }
+    .btn:active { transform: translateY(1px); }
+
+    .btn-primary { background: var(--accent); color: #fff; box-shadow: 0 4px 16px var(--accent-glow); }
+    .btn-ghost   { background: var(--surface); color: var(--muted-light); border: 1px solid var(--border); box-shadow: none; }
+    .btn-ghost:hover { color: var(--text); border-color: var(--border-bright); }
+    .btn-danger  { background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.35); box-shadow: none; }
+    .btn-danger:hover { background: rgba(239,68,68,0.25); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+    /* ---- MAIN GRID ---- */
+    .main-grid { display: grid; grid-template-columns: 360px 1fr; gap: 16px; align-items: start; }
+
+    /* ---- PANEL ---- */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .panel-header {
+      padding: 18px 20px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .panel-title { font-size: 15px; font-weight: 700; }
+    .panel-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .panel-body  { padding: 20px; }
+
+    /* ---- FORM ---- */
+    .form-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    .form-row  { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .form-actions { display: flex; gap: 8px; margin-top: 14px; }
+    .form-hint { font-size: 11px; color: var(--muted); margin-top: 10px; display: flex; align-items: flex-start; gap: 6px; line-height: 1.5; }
+    .form-hint svg { flex-shrink: 0; margin-top: 1px; }
+
+    .edit-indicator {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: rgba(59,130,246,0.1);
+      border: 1px solid rgba(59,130,246,0.3);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      color: #93c5fd;
+      margin-bottom: 12px;
+    }
+    .edit-indicator.active { display: flex; }
+
+    /* ---- TABLE ---- */
+    .table-wrap { overflow-x: auto; max-height: 68vh; overflow-y: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    thead { position: sticky; top: 0; z-index: 2; background: rgba(6,13,26,0.95); backdrop-filter: blur(8px); }
+    th {
+      padding: 12px 14px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    td {
+      padding: 12px 14px;
+      font-size: 13px;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted-light);
+    }
+    td.primary { color: var(--text); font-weight: 500; }
+    tbody tr { transition: background 0.12s; }
+    tbody tr:hover { background: var(--surface-hover); }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ---- BADGES ---- */
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+    }
+    .badge::before {
+      content: '';
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .badge.stok        { background: rgba(34,197,94,0.12);  color: #4ade80; }
+    .badge.kullanimda  { background: rgba(56,189,248,0.12); color: #7dd3fc; }
+    .badge.beklemede   { background: rgba(245,158,11,0.12); color: #fbbf24; }
+    .badge.arizali     { background: rgba(239,68,68,0.12);  color: #f87171; }
+
+    /* ---- TYPE CHIP ---- */
+    .type-chip {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(168,85,247,0.1);
+      color: #c084fc;
+      border: 1px solid rgba(168,85,247,0.2);
+    }
+
+    /* ---- EMPTY STATE ---- */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 56px 24px;
+      color: var(--muted);
+      text-align: center;
+    }
+    .empty-state svg { opacity: 0.35; }
+    .empty-state p { font-size: 14px; font-weight: 500; }
+    .empty-state span { font-size: 13px; opacity: 0.7; }
+
+    /* ---- SCROLLBAR ---- */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+    /* ---- RESPONSIVE ---- */
+    @media (max-width: 960px) {
+      .main-grid { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .page { padding: 16px 14px 48px; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .form-row { grid-template-columns: 1fr; }
+    }
+
+    /* ---- DIVIDER ---- */
+    .section-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+  </style>
+</head>
+<body>
+
+<div id="toast-container"></div>
+
+<div class="page">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-brand">
+      <div class="logo">H</div>
+      <div class="header-title">
+        <h1>HYS Envanter</h1>
+        <p>Donanım & ekipman takip sistemi</p>
+      </div>
+    </div>
+    <div class="sync-badge">
+      <span class="sync-dot"></span>
+      <span id="last-sync">Yükleniyor...</span>
+    </div>
+  </header>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat-card stat-total">
+      <span class="stat-label">Toplam Kayıt</span>
+      <span class="stat-value" id="stat-total">—</span>
+      <span class="stat-sub">Tüm ekipmanlar</span>
+    </div>
+    <div class="stat-card stat-stok">
+      <span class="stat-label">Stokta</span>
+      <span class="stat-value" id="stat-stok">—</span>
+      <span class="stat-sub">Kullanıma hazır</span>
+    </div>
+    <div class="stat-card stat-kullanimda">
+      <span class="stat-label">Kullanımda</span>
+      <span class="stat-value" id="stat-kullanimda">—</span>
+      <span class="stat-sub">Aktif kullanım</span>
+    </div>
+    <div class="stat-card stat-arizali">
+      <span class="stat-label">Arızalı</span>
+      <span class="stat-value" id="stat-arizali">—</span>
+      <span class="stat-sub">Müdahale gerekiyor</span>
+    </div>
+  </div>
+
+  <!-- CONTROLS / FILTERS -->
+  <section class="controls">
+    <div class="controls-top">
+      <span class="controls-label">Filtrele &amp; Ara</span>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="export-json" type="button">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Dışa Aktar
+        </button>
+        <button class="btn btn-ghost" id="import-json" type="button">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10" transform="rotate(180 12 12)"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          İçe Aktar
+        </button>
+        <button class="btn btn-danger" id="clear-storage" type="button">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+          Sıfırla
+        </button>
+        <input type="file" id="import-file" accept="application/json" style="display:none;">
+      </div>
+    </div>
+    <div class="filter-row">
+      <label class="field">Tür
+        <select id="filter-type">
+          <option value="">Tümü</option>
+          <option value="PC">PC</option>
+          <option value="Mouse">Mouse</option>
+          <option value="Toner">Toner</option>
+          <option value="Telefon">Telefon</option>
+          <option value="Hat">Hat / SIM</option>
+          <option value="Diğer">Diğer</option>
+        </select>
+      </label>
+      <label class="field">Durum
+        <select id="filter-status">
+          <option value="">Tümü</option>
+          <option value="Stokta">Stokta</option>
+          <option value="Kullanımda">Kullanımda</option>
+          <option value="Beklemede">Beklemede</option>
+          <option value="Arızalı">Arızalı</option>
+        </select>
+      </label>
+      <label class="field">Arama
+        <input id="filter-search" placeholder="Model, seri, kişi, konum...">
+      </label>
+    </div>
+  </section>
+
+  <!-- MAIN GRID -->
+  <div class="main-grid">
+
+    <!-- FORM PANEL -->
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Kayıt Ekle / Düzenle</div>
+          <div class="panel-sub">Formu doldurun, kaydedin</div>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="edit-indicator" id="edit-indicator">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg>
+          Düzenleme modu aktif
+        </div>
+        <form id="asset-form">
+          <div class="form-grid">
+            <label class="field">Yetki Şifresi
+              <input id="admin-password" type="password" placeholder="Kaydet/Güncelle/Sil için gerekli" autocomplete="off">
+            </label>
+            <hr class="section-divider">
+            <div class="form-row">
+              <label class="field">Tür
+                <select name="tur" required>
+                  <option value="PC">PC</option>
+                  <option value="Mouse">Mouse</option>
+                  <option value="Toner">Toner</option>
+                  <option value="Telefon">Telefon</option>
+                  <option value="Hat">Hat / SIM</option>
+                  <option value="Diğer">Diğer</option>
+                </select>
+              </label>
+              <label class="field">Durum
+                <select name="durum" required>
+                  <option value="Stokta">Stokta</option>
+                  <option value="Kullanımda">Kullanımda</option>
+                  <option value="Beklemede">Beklemede</option>
+                  <option value="Arızalı">Arızalı</option>
+                </select>
+              </label>
+            </div>
+            <label class="field">Marka / Model
+              <input name="model" required placeholder="Örn: Dell OptiPlex 7010">
+            </label>
+            <label class="field">Seri / Hat No
+              <input name="seri" required placeholder="Seri ya da hat numarası">
+            </label>
+            <div class="form-row">
+              <label class="field">Atanan / Sahibi
+                <input name="atanan" placeholder="Kime ait?">
+              </label>
+              <label class="field">Departman
+                <input name="departman" placeholder="Operasyon, IT...">
+              </label>
+            </div>
+            <div class="form-row">
+              <label class="field">Konum
+                <input name="konum" placeholder="Ofis, depo, saha...">
+              </label>
+              <label class="field">Tarih
+                <input name="tarih" type="date">
+              </label>
+            </div>
+            <label class="field">Not
+              <textarea name="not" placeholder="Teslim bilgisi, arıza detayı..."></textarea>
+            </label>
+          </div>
+          <div class="form-actions">
+            <button type="submit" id="submit-btn" class="btn btn-primary" style="flex:1;">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              Kaydet
+            </button>
+            <button type="button" class="btn btn-ghost" id="reset-form">Temizle</button>
+          </div>
+          <p class="form-hint">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Veriler veritabanında tutulur. Kaydet, Güncelle, Sil ve Sıfırla işlemleri için yetki şifresi gereklidir.
+          </p>
+        </form>
+      </div>
+    </section>
+
+    <!-- TABLE PANEL -->
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Envanter Listesi</div>
+          <div class="panel-sub" id="table-meta">Yükleniyor...</div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Seri / Hat</th>
+              <th>Tür</th>
+              <th>Atanan</th>
+              <th>Departman</th>
+              <th>Durum</th>
+              <th>Konum</th>
+              <th>Tarih</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="asset-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+  let assets = [];
+  let editId = null;
+
+  /* ---- TOAST ---- */
+  function toast(msg, type = "info") {
+    const c = document.getElementById("toast-container");
+    const t = document.createElement("div");
+    t.className = `toast ${type}`;
+    t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(() => {
+      t.style.animation = "fade-out 0.25s ease forwards";
+      setTimeout(() => t.remove(), 250);
+    }, 3200);
+  }
+
+  /* ---- STATUS ---- */
+  function statusClass(durum = "") {
+    const map = { "Stokta": "stok", "Kullanımda": "kullanimda", "Arızalı": "arizali" };
+    return map[durum] || "beklemede";
+  }
+
+  function updateSyncLabel(text) {
+    document.getElementById("last-sync").textContent = text;
+  }
+
+  function updateStats() {
+    const total = assets.length;
+    const stok = assets.filter(a => a.durum === "Stokta").length;
+    const kullanimda = assets.filter(a => a.durum === "Kullanımda").length;
+    const arizali = assets.filter(a => a.durum === "Arızalı").length;
+    document.getElementById("stat-total").textContent = total;
+    document.getElementById("stat-stok").textContent = stok;
+    document.getElementById("stat-kullanimda").textContent = kullanimda;
+    document.getElementById("stat-arizali").textContent = arizali;
+  }
+
+  function getAdminPassword() {
+    const val = (document.getElementById("admin-password")?.value || "").trim();
+    if (!val) { toast("Yetkili işlem için şifre gerekli.", "error"); return null; }
+    return val;
+  }
+
+  /* ---- API ---- */
+  async function apiGetAssets() {
+    const r = await fetch("/api/assets");
+    if (!r.ok) throw new Error("Liste alınamadı");
+    return r.json();
+  }
+
+  async function apiUpsertAssets(items, adminPass) {
+    const r = await fetch("/api/assets", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-password": adminPass },
+      body: JSON.stringify(items)
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data?.error || "Kayıt yapılamadı");
+    return data;
+  }
+
+  async function apiDeleteAsset(id, adminPass) {
+    const r = await fetch(`/api/assets?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      headers: { "x-admin-password": adminPass }
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data?.error || "Silinemedi");
+    return data;
+  }
+
+  async function apiClearAll(adminPass) {
+    const r = await fetch("/api/assets", {
+      method: "DELETE",
+      headers: { "x-admin-password": adminPass }
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data?.error || "Sıfırlanamadı");
+    return data;
+  }
+
+  /* ---- FILTER ---- */
+  function rowMatchesFilters(item) {
+    const type   = document.getElementById("filter-type").value;
+    const status = document.getElementById("filter-status").value;
+    const search = document.getElementById("filter-search").value.toLowerCase().trim();
+    if (type && item.tur !== type) return false;
+    if (status && item.durum !== status) return false;
+    if (search) {
+      const hay = [item.model, item.seri, item.atanan, item.konum, item.departman].join(" ").toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  }
+
+  /* ---- RENDER ---- */
+  function renderTable() {
+    const tbody = document.getElementById("asset-body");
+    const meta  = document.getElementById("table-meta");
+    const filtered = assets.filter(rowMatchesFilters)
+      .sort((a, b) => (b.tarih || "").localeCompare(a.tarih || ""));
+
+    meta.textContent = `${filtered.length} kayıt gösteriliyor` + (filtered.length !== assets.length ? ` (toplam ${assets.length})` : "");
+
+    if (!filtered.length) {
+      tbody.innerHTML = `
+        <tr><td colspan="9">
+          <div class="empty-state">
+            <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <path d="M3 9h18M9 21V9"/>
+            </svg>
+            <p>Kayıt bulunamadı</p>
+            <span>Filtrelerinizi değiştirmeyi ya da yeni kayıt eklemeyi deneyin</span>
+          </div>
+        </td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(item => `
+      <tr data-id="${item.id}">
+        <td class="primary">${item.model || "—"}</td>
+        <td style="font-family:monospace;font-size:12px;">${item.seri || "—"}</td>
+        <td><span class="type-chip">${item.tur || "—"}</span></td>
+        <td>${item.atanan || "—"}</td>
+        <td>${item.departman || "—"}</td>
+        <td><span class="badge ${statusClass(item.durum)}">${item.durum || "—"}</span></td>
+        <td>${item.konum || "—"}</td>
+        <td style="white-space:nowrap;">${item.tarih || "—"}</td>
+        <td>
+          <div style="display:inline-flex;gap:6px;">
+            <button class="btn btn-ghost btn-sm" data-action="edit" type="button">Düzenle</button>
+            <button class="btn btn-danger btn-sm" data-action="delete" type="button">Sil</button>
+          </div>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  /* ---- FORM ---- */
+  function resetForm() {
+    document.getElementById("asset-form").reset();
+    editId = null;
+    document.getElementById("submit-btn").innerHTML = `
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      Kaydet`;
+    document.getElementById("edit-indicator").classList.remove("active");
+  }
+
+  function formToObject(form) {
+    return Object.fromEntries(new FormData(form).entries());
+  }
+
+  /* ---- LOAD ---- */
+  async function loadAssets() {
+    try {
+      updateSyncLabel("Yükleniyor...");
+      assets = await apiGetAssets();
+      updateSyncLabel(`Güncellendi: ${new Date().toLocaleString("tr-TR")}`);
+      updateStats();
+    } catch (e) {
+      updateSyncLabel("Bağlantı hatası");
+      toast("Kayıtlar yüklenemedi: " + e.message, "error");
+      assets = [];
+    }
+    renderTable();
+  }
+
+  /* ---- EVENTS ---- */
+  document.getElementById("asset-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const adminPass = getAdminPassword();
+    if (!adminPass) return;
+
+    const payload = formToObject(e.target);
+    if (editId) payload.id = editId;
+
+    const btn = document.getElementById("submit-btn");
+    btn.disabled = true;
+    btn.style.opacity = "0.6";
+
+    try {
+      await apiUpsertAssets(payload, adminPass);
+      updateSyncLabel(`Son kayıt: ${new Date().toLocaleString("tr-TR")}`);
+      toast(editId ? "Kayıt güncellendi." : "Yeni kayıt eklendi.", "success");
+      await loadAssets();
+      resetForm();
+    } catch (err) {
+      toast(err.message, "error");
+    } finally {
+      btn.disabled = false;
+      btn.style.opacity = "1";
+    }
+  });
+
+  document.getElementById("asset-body").addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-action]");
+    if (!btn) return;
+    const action = btn.getAttribute("data-action");
+    const row = btn.closest("tr");
+    const id  = row?.getAttribute("data-id");
+    if (!id) return;
+
+    if (action === "edit") {
+      const item = assets.find(a => a.id === id);
+      if (!item) return;
+      const form = document.getElementById("asset-form");
+      for (const key of ["tur","model","seri","atanan","departman","durum","konum","tarih","not"]) {
+        if (form.elements[key]) form.elements[key].value = item[key] || "";
+      }
+      editId = id;
+      document.getElementById("submit-btn").innerHTML = `
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        Güncelle`;
+      document.getElementById("edit-indicator").classList.add("active");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    if (action === "delete") {
+      (async () => {
+        const adminPass = getAdminPassword();
+        if (!adminPass) return;
+        if (!confirm("Bu kaydı silmek istediğinize emin misiniz?")) return;
+        try {
+          await apiDeleteAsset(id, adminPass);
+          toast("Kayıt silindi.", "info");
+          updateSyncLabel(`Son işlem: ${new Date().toLocaleString("tr-TR")}`);
+          await loadAssets();
+        } catch (err) {
+          toast(err.message, "error");
+        }
+      })();
+    }
+  });
+
+  document.getElementById("reset-form").addEventListener("click", resetForm);
+
+  document.getElementById("clear-storage").addEventListener("click", () => {
+    (async () => {
+      const adminPass = getAdminPassword();
+      if (!adminPass) return;
+      if (!confirm("Tüm veritabanı kayıtlarını silmek istediğinize emin misiniz?")) return;
+      try {
+        await apiClearAll(adminPass);
+        toast("Veritabanı sıfırlandı.", "info");
+        updateSyncLabel("Sıfırlandı");
+        await loadAssets();
+        resetForm();
+      } catch (err) {
+        toast(err.message, "error");
+      }
+    })();
+  });
+
+  document.getElementById("export-json").addEventListener("click", () => {
+    const blob = new Blob([JSON.stringify(assets, null, 2)], { type: "application/json" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url;
+    a.download = `hys-envanter-${new Date().toISOString().split("T")[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast("JSON dosyası indirildi.", "success");
+  });
+
+  document.getElementById("import-json").addEventListener("click", () => document.getElementById("import-file").click());
+  document.getElementById("import-file").addEventListener("change", (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      try {
+        const parsed = JSON.parse(ev.target.result);
+        if (!Array.isArray(parsed) || !parsed.every(o => o && o.tur && o.model && o.seri))
+          throw new Error("Geçersiz format");
+        const adminPass = getAdminPassword();
+        if (!adminPass) return;
+        if (!confirm(`${parsed.length} kayıt içe aktarılacak. Devam?`)) return;
+        await apiUpsertAssets(parsed, adminPass);
+        toast(`${parsed.length} kayıt içe aktarıldı.`, "success");
+        updateSyncLabel(`Son kayıt: ${new Date().toLocaleString("tr-TR")}`);
+        await loadAssets();
+        resetForm();
+      } catch (err) {
+        toast("JSON okunamadı: " + err.message, "error");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  });
+
+  for (const id of ["filter-type", "filter-status", "filter-search"]) {
+    const el = document.getElementById(id);
+    el.addEventListener("input",  renderTable);
+    el.addEventListener("change", renderTable);
+  }
+
+  loadAssets();
+</script>
+</body>
+</html>
