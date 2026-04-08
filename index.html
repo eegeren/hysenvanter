@@ -300,11 +300,22 @@
       font-weight: 700;
       font-size: 13px;
       color: var(--text);
+      cursor: pointer;
+      user-select: none;
     }
+    tr.group-header:hover td { background: rgba(59,130,246,0.12); }
+    tr.group-header td .chevron {
+      display: inline-block;
+      margin-right: 8px;
+      transition: transform 0.2s;
+      opacity: 0.6;
+    }
+    tr.group-header.open td .chevron { transform: rotate(90deg); }
     tr.group-child td {
       background: rgba(255,255,255,0.015);
       padding-left: 28px;
     }
+    tr.group-child.hidden { display: none; }
     tr.group-child:last-of-type td { border-bottom: 1px solid rgba(59,130,246,0.1); }
 
     /* ---- SERI LIST (grouped rows) ---- */
@@ -801,9 +812,11 @@
       } else {
         const first = group[0];
         const dept = [...new Set(group.map(it => it.departman).filter(Boolean))].join(", ") || "—";
+        const groupId = `grp-${Math.random().toString(36).slice(2)}`;
         rows.push(`
-          <tr class="group-header">
+          <tr class="group-header" data-group-id="${groupId}">
             <td colspan="4">
+              <span class="chevron">&#9654;</span>
               <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:-2px;margin-right:6px;opacity:0.6"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               ${first.atanan || "—"}
               <span class="adet-badge">${group.length} cihaz</span>
@@ -812,7 +825,7 @@
           </tr>`);
         for (const item of group) {
           rows.push(`
-            <tr class="group-child" data-id="${item.id}">
+            <tr class="group-child hidden" data-group-id="${groupId}" data-id="${item.id}">
               <td><span class="type-chip">${item.tur || "—"}</span></td>
               <td class="primary">${item.model || "—"}</td>
               <td style="font-family:monospace;font-size:12px;">${item.seri || "—"}</td>
@@ -832,6 +845,16 @@
       }
     }
     tbody.innerHTML = rows.join("");
+
+    tbody.querySelectorAll("tr.group-header").forEach(header => {
+      header.addEventListener("click", () => {
+        const id = header.dataset.groupId;
+        const isOpen = header.classList.toggle("open");
+        tbody.querySelectorAll(`tr.group-child[data-group-id="${id}"]`).forEach(child => {
+          child.classList.toggle("hidden", !isOpen);
+        });
+      });
+    });
   }
 
   /* ---- FORM ---- */
