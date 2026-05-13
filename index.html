@@ -423,6 +423,133 @@
       background: rgba(255,255,255,0.15);
     }
     .cat-tab.active .cat-count { background: rgba(255,255,255,0.25); }
+
+    /* ---- APP NAV ---- */
+    .app-nav {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .app-nav .nav-tab {
+      padding: 10px 18px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted-light);
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .app-nav .nav-tab:hover { border-color: var(--border-bright); color: var(--text); }
+    .app-nav .nav-tab.active {
+      background: linear-gradient(135deg, rgba(59,130,246,0.25), rgba(168,85,247,0.15));
+      border-color: rgba(59,130,246,0.45);
+      color: var(--text);
+    }
+
+    /* ---- DASHBOARD ---- */
+    .dash-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .chart-title { font-size: 14px; font-weight: 700; }
+    .chart-sub  { font-size: 12px; color: var(--muted); margin-top: -6px; }
+    .donut-row {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .donut-visual {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      box-shadow: 0 0 24px rgba(0,0,0,0.35);
+      border: 2px solid var(--border);
+    }
+    .donut-hole {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--bg) 0%, var(--bg) 52%, transparent 53%);
+      position: absolute;
+      pointer-events: none;
+    }
+    .donut-wrap { position: relative; width: 140px; height: 140px; flex-shrink: 0; }
+    .donut-center {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .donut-center strong { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+    .donut-center span { font-size: 11px; color: var(--muted); font-weight: 500; }
+    .legend { display: flex; flex-direction: column; gap: 8px; font-size: 12px; }
+    .legend-item { display: flex; align-items: center; gap: 8px; color: var(--muted-light); }
+    .legend-swatch { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+    .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+    .bar-row { display: grid; grid-template-columns: 72px 1fr 36px; align-items: center; gap: 10px; font-size: 12px; }
+    .bar-row .bar-track {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      overflow: hidden;
+    }
+    .bar-row .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), var(--purple));
+      transition: width 0.35s ease;
+    }
+    .bar-row .bar-num { text-align: right; font-weight: 700; color: var(--muted-light); }
+    .avail-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .avail-card {
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03);
+    }
+    .avail-card strong { display: block; font-size: 22px; font-weight: 800; margin-top: 4px; }
+    .avail-card.stok strong { color: var(--green); }
+    .avail-card.diger strong { color: var(--muted-light); }
+    .avail-card span { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .bulk-toolbar {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(239,68,68,0.06);
+    }
+    .bulk-toolbar.visible { display: flex; }
+    .bulk-toolbar span { font-size: 13px; font-weight: 600; color: #fca5a5; }
+    th.th-check, td.bulk-cell { width: 40px; text-align: center; vertical-align: middle; }
+    th.th-check input, td.bulk-cell input { cursor: pointer; width: 16px; height: 16px; accent-color: var(--accent); }
+    .view-hidden { display: none !important; }
   </style>
 </head>
 <body>
@@ -446,7 +573,12 @@
     </div>
   </header>
 
-  <!-- STATS -->
+  <nav class="app-nav" aria-label="Görünüm">
+    <button type="button" class="nav-tab active" data-view="dashboard">Özet</button>
+    <button type="button" class="nav-tab" data-view="inventory">Envanter</button>
+  </nav>
+
+  <!-- STATS (shared) -->
   <div class="stats">
     <div class="stat-card stat-total">
       <span class="stat-label">Toplam Kayıt</span>
@@ -470,6 +602,52 @@
     </div>
   </div>
 
+  <!-- DASHBOARD -->
+  <section id="view-dashboard" class="dash-section">
+    <div class="dash-grid">
+      <div class="chart-card" style="grid-column: span 1;">
+        <div class="chart-title">Durum dağılımı</div>
+        <div class="chart-sub">Kayıtların hangi durumda olduğu</div>
+        <div class="donut-row">
+          <div class="donut-wrap">
+            <div class="donut-visual" id="chart-donut-durum" role="img" aria-label="Durum grafiği"></div>
+            <div class="donut-center">
+              <strong id="dash-total-pie">0</strong>
+              <span>kayıt</span>
+            </div>
+          </div>
+          <div class="legend" id="legend-durum"></div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Kullanıma hazır özeti</div>
+        <div class="chart-sub">Stokta olanlar ve diğerleri</div>
+        <div class="avail-cards">
+          <div class="avail-card stok">
+            <span>Stokta (var)</span>
+            <strong id="dash-stok-pct">—</strong>
+          </div>
+          <div class="avail-card diger">
+            <span>Sahada / beklemede / arıza</span>
+            <strong id="dash-diger-pct">—</strong>
+          </div>
+        </div>
+        <div class="bar-row" style="margin-top:8px;">
+          <span style="color:var(--muted);font-size:11px;">Oran</span>
+          <div class="bar-track"><div class="bar-fill" id="dash-stok-bar" style="width:0%;background:linear-gradient(90deg,var(--green),#4ade80);"></div></div>
+          <span class="bar-num" id="dash-stok-bar-label">0%</span>
+        </div>
+      </div>
+      <div class="chart-card" style="grid-column: 1 / -1;">
+        <div class="chart-title">Türe göre envanter</div>
+        <div class="chart-sub">Her donanım türünden kaç kayıt var</div>
+        <div class="bar-chart" id="chart-bars-tur"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INVENTORY -->
+  <div id="view-inventory" class="view-hidden">
   <!-- CONTROLS / FILTERS -->
   <section class="controls">
     <div class="controls-top">
@@ -602,10 +780,18 @@
           <div class="panel-sub" id="table-meta">Yükleniyor...</div>
         </div>
       </div>
+      <div class="bulk-toolbar" id="bulk-toolbar">
+        <span id="bulk-toolbar-label">0 kayıt seçili</span>
+        <div class="btn-row">
+          <button type="button" class="btn btn-danger btn-sm" id="bulk-delete-btn">Seçilenleri sil</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="bulk-clear-btn">Seçimi kaldır</button>
+        </div>
+      </div>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
+              <th class="th-check"><input type="checkbox" id="bulk-select-all" title="Görünenleri seç" aria-label="Görünen tüm kayıtları seç"></th>
               <th>Tür</th>
               <th>Model</th>
               <th>Seri / Hat</th>
@@ -623,12 +809,14 @@
     </section>
 
   </div>
+  </div>
 </div>
 
 <script>
   let assets = [];
   let editId = null;
   let activeType = "";
+  let selectedIds = new Set();
 
   /* ---- TOAST ---- */
   function toast(msg, type = "info") {
@@ -662,9 +850,82 @@
     document.getElementById("stat-stok").textContent = stok;
     document.getElementById("stat-kullanimda").textContent = kullanimda;
     document.getElementById("stat-arizali").textContent = arizali;
+    renderDashboardCharts();
+  }
+
+  function renderDashboardCharts() {
+    const total = assets.length;
+    const donutEl = document.getElementById("chart-donut-durum");
+    const legendEl = document.getElementById("legend-durum");
+    if (!donutEl || !legendEl) return;
+    const pieTotal = document.getElementById("dash-total-pie");
+    if (pieTotal) pieTotal.textContent = String(total);
+
+    const durumSpec = [
+      { label: "Stokta", key: "Stokta", color: "#22c55e" },
+      { label: "Kullanımda", key: "Kullanımda", color: "#38bdf8" },
+      { label: "Beklemede", key: "Beklemede", color: "#f59e0b" },
+      { label: "Arızalı", key: "Arızalı", color: "#ef4444" },
+      { label: "Diğer / boş", key: "__other", color: "#64748b" }
+    ];
+    const counts = {};
+    for (const s of durumSpec) counts[s.key] = 0;
+    for (const a of assets) {
+      const d = a.durum || "";
+      if (counts[d] !== undefined) counts[d]++;
+      else counts.__other++;
+    }
+
+    if (!total) {
+      donutEl.style.background = "conic-gradient(#334155 0% 100%)";
+      legendEl.innerHTML = `<div class="legend-item"><span class="legend-swatch" style="background:#64748b"></span>Kayıt yok</div>`;
+    } else {
+      let acc = 0;
+      const segs = [];
+      for (const s of durumSpec) {
+        const c = counts[s.key];
+        if (!c) continue;
+        const start = (acc / total) * 100;
+        acc += c;
+        const end = (acc / total) * 100;
+        segs.push(`${s.color} ${start.toFixed(2)}% ${end.toFixed(2)}%`);
+      }
+      const hole = "#060d1a";
+      donutEl.style.background = `radial-gradient(circle at 50% 50%, ${hole} 52%, transparent 52.5%), conic-gradient(${segs.join(", ")})`;
+      legendEl.innerHTML = durumSpec
+        .filter((s) => counts[s.key] > 0)
+        .map(
+          (s) => `<div class="legend-item"><span class="legend-swatch" style="background:${s.color}"></span>${s.label}: <strong style="color:var(--text)">${counts[s.key]}</strong></div>`
+        )
+        .join("");
+    }
+
+    const stokN = assets.filter((a) => a.durum === "Stokta").length;
+    const digerN = Math.max(0, total - stokN);
+    const stokPct = total ? Math.round((stokN / total) * 100) : 0;
+    const elStok = document.getElementById("dash-stok-pct");
+    const elDiger = document.getElementById("dash-diger-pct");
+    const bar = document.getElementById("dash-stok-bar");
+    const barLbl = document.getElementById("dash-stok-bar-label");
+    if (elStok) elStok.textContent = total ? `${stokN} (${stokPct}%)` : "—";
+    if (elDiger) elDiger.textContent = total ? `${digerN} (${digerPct}%)` : "—";
+    if (bar) bar.style.width = `${stokPct}%`;
+    if (barLbl) barLbl.textContent = `${stokPct}%`;
+
+    const maxTur = Math.max(1, ...CAT_TYPES.map((t) => assets.filter((a) => a.tur === t).length));
+    const bars = document.getElementById("chart-bars-tur");
+    if (bars) {
+      bars.innerHTML = CAT_TYPES.map((t) => {
+        const n = assets.filter((a) => a.tur === t).length;
+        const w = Math.round((n / maxTur) * 100);
+        return `<div class="bar-row"><span style="color:var(--muted-light);font-weight:600;">${t}</span><div class="bar-track"><div class="bar-fill" style="width:${w}%"></div></div><span class="bar-num">${n}</span></div>`;
+      }).join("");
+    }
   }
 
   let _adminPass = "";
+
+  const CAT_TYPES = ["PC", "Tablet", "Mouse", "Toner", "Telefon", "Hat", "Diğer"];
 
   function getAdminPassword() {
     const input = document.getElementById("admin-password");
@@ -715,8 +976,46 @@
     return data;
   }
 
+  async function apiBulkDelete(ids, adminPass) {
+    const r = await fetch("/api/assets", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "x-admin-password": encodeURIComponent(adminPass)
+      },
+      body: JSON.stringify({ ids })
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data?.error || "Toplu silinemedi");
+    return data;
+  }
+
+  function getFilteredList() {
+    return assets.filter(rowMatchesFilters).sort((a, b) => (b.tarih || "").localeCompare(a.tarih || ""));
+  }
+
+  function getBulkSelectableIds() {
+    if (activeType === "Toner") return [];
+    return getFilteredList().map((a) => a.id);
+  }
+
+  function updateBulkToolbar() {
+    const bar = document.getElementById("bulk-toolbar");
+    const lbl = document.getElementById("bulk-toolbar-label");
+    const n = selectedIds.size;
+    if (lbl) lbl.textContent = `${n} kayıt seçili`;
+    if (bar) bar.classList.toggle("visible", n > 0 && activeType !== "Toner");
+    const selAll = document.getElementById("bulk-select-all");
+    if (!selAll) return;
+    const ids = getBulkSelectableIds();
+    selAll.disabled = activeType === "Toner" || ids.length === 0;
+    const allOn = ids.length > 0 && ids.every((id) => selectedIds.has(id));
+    const some = ids.some((id) => selectedIds.has(id));
+    selAll.checked = allOn;
+    selAll.indeterminate = some && !allOn;
+  }
+
   /* ---- CATEGORY TABS ---- */
-  const CAT_TYPES = ["PC", "Tablet", "Mouse", "Toner", "Telefon", "Hat", "Diğer"];
 
   function renderCatTabs() {
     const container = document.getElementById("cat-tabs");
@@ -736,6 +1035,7 @@
     container.querySelectorAll(".cat-tab").forEach(btn => {
       btn.addEventListener("click", () => {
         activeType = btn.dataset.type;
+        if (activeType === "Toner") selectedIds.clear();
         renderCatTabs();
         renderTable();
       });
@@ -763,11 +1063,14 @@
     const filtered = assets.filter(rowMatchesFilters)
       .sort((a, b) => (b.tarih || "").localeCompare(a.tarih || ""));
 
-    meta.textContent = `${filtered.length} kayıt gösteriliyor` + (filtered.length !== assets.length ? ` (toplam ${assets.length})` : "");
+    meta.textContent = `${filtered.length} kayıt gösteriliyor` + (filtered.length !== assets.length ? ` (toplam ${assets.length})` : "")
+      + (activeType === "Toner" ? " · Toner özetinde toplu seçim yok" : "");
+
+    const chk = (id) => (selectedIds.has(id) ? " checked" : "");
 
     if (!filtered.length) {
       tbody.innerHTML = `
-        <tr><td colspan="9">
+        <tr><td colspan="10">
           <div class="empty-state">
             <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
               <rect x="3" y="3" width="18" height="18" rx="2"/>
@@ -777,13 +1080,13 @@
             <span>Filtrelerinizi değiştirmeyi ya da yeni kayıt eklemeyi deneyin</span>
           </div>
         </td></tr>`;
+      updateBulkToolbar();
       return;
     }
 
     const rows = [];
 
     if (activeType === "Toner") {
-      // Group by model name, show total count per model
       const tonerMap = new Map();
       for (const item of filtered) {
         const key = (item.model || "").trim().toLowerCase();
@@ -795,6 +1098,7 @@
         const totalAdet = group.length;
         rows.push(`
           <tr>
+            <td class="bulk-cell"></td>
             <td><span class="type-chip">${first.tur || "—"}</span></td>
             <td class="primary">${first.model || "—"}</td>
             <td style="font-family:monospace;font-size:12px;">—</td>
@@ -807,7 +1111,6 @@
           </tr>`);
       }
     } else {
-      // Group by atanan
       const groupMap = new Map();
       for (const item of filtered) {
         const key = (item.atanan || "").trim().toLowerCase();
@@ -820,6 +1123,7 @@
           const item = group[0];
           rows.push(`
             <tr data-id="${item.id}">
+              <td class="bulk-cell"><input type="checkbox" class="bulk-row" data-id="${item.id}"${chk(item.id)} aria-label="Seç"></td>
               <td><span class="type-chip">${item.tur || "—"}</span></td>
               <td class="primary">${item.model || "—"}</td>
               <td style="font-family:monospace;font-size:12px;">${item.seri || "—"}</td>
@@ -841,7 +1145,7 @@
           const groupId = `grp-${Math.random().toString(36).slice(2)}`;
           rows.push(`
             <tr class="group-header" data-group-id="${groupId}">
-              <td colspan="4">
+              <td colspan="5">
                 <span class="chevron">&#9654;</span>
                 <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:-2px;margin-right:6px;opacity:0.6"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 ${first.atanan || "—"}
@@ -852,6 +1156,7 @@
           for (const item of group) {
             rows.push(`
               <tr class="group-child hidden" data-group-id="${groupId}" data-id="${item.id}">
+                <td class="bulk-cell"><input type="checkbox" class="bulk-row" data-id="${item.id}"${chk(item.id)} aria-label="Seç"></td>
                 <td><span class="type-chip">${item.tur || "—"}</span></td>
                 <td class="primary">${item.model || "—"}</td>
                 <td style="font-family:monospace;font-size:12px;">${item.seri || "—"}</td>
@@ -882,6 +1187,7 @@
         });
       });
     });
+    updateBulkToolbar();
   }
 
   /* ---- FORM ---- */
@@ -910,6 +1216,10 @@
       updateSyncLabel("Bağlantı hatası");
       toast("Kayıtlar yüklenemedi: " + e.message, "error");
       assets = [];
+    }
+    const valid = new Set(assets.map((a) => a.id));
+    for (const id of [...selectedIds]) {
+      if (!valid.has(id)) selectedIds.delete(id);
     }
     renderCatTabs();
     renderTable();
@@ -1057,6 +1367,64 @@
     el.addEventListener("input",  renderTable);
     el.addEventListener("change", renderTable);
   }
+
+  function setView(view) {
+    document.querySelectorAll(".nav-tab").forEach((b) => b.classList.toggle("active", b.dataset.view === view));
+    document.getElementById("view-dashboard").classList.toggle("view-hidden", view !== "dashboard");
+    document.getElementById("view-inventory").classList.toggle("view-hidden", view !== "inventory");
+    if (view === "dashboard") renderDashboardCharts();
+  }
+
+  document.querySelectorAll(".nav-tab").forEach((btn) => {
+    btn.addEventListener("click", () => setView(btn.dataset.view));
+  });
+
+  document.getElementById("bulk-select-all").addEventListener("change", (e) => {
+    const ids = getBulkSelectableIds();
+    if (e.target.checked) ids.forEach((id) => selectedIds.add(id));
+    else ids.forEach((id) => selectedIds.delete(id));
+    renderTable();
+  });
+
+  document.getElementById("asset-body").addEventListener("change", (e) => {
+    const inp = e.target.closest("input.bulk-row");
+    if (!inp) return;
+    const id = inp.getAttribute("data-id");
+    if (!id) return;
+    if (inp.checked) selectedIds.add(id);
+    else selectedIds.delete(id);
+    updateBulkToolbar();
+    const selAll = document.getElementById("bulk-select-all");
+    const bid = getBulkSelectableIds();
+    const allOn = bid.length > 0 && bid.every((x) => selectedIds.has(x));
+    const some = bid.some((x) => selectedIds.has(x));
+    selAll.checked = allOn;
+    selAll.indeterminate = some && !allOn;
+  });
+
+  document.getElementById("bulk-clear-btn").addEventListener("click", () => {
+    selectedIds.clear();
+    renderTable();
+  });
+
+  document.getElementById("bulk-delete-btn").addEventListener("click", () => {
+    (async () => {
+      const ids = [...selectedIds];
+      if (!ids.length) return;
+      const adminPass = getAdminPassword();
+      if (!adminPass) return;
+      if (!confirm(`${ids.length} kayıt kalıcı olarak silinsin mi?`)) return;
+      try {
+        await apiBulkDelete(ids, adminPass);
+        toast(`${ids.length} kayıt silindi.`, "info");
+        selectedIds.clear();
+        updateSyncLabel(`Son işlem: ${new Date().toLocaleString("tr-TR")}`);
+        await loadAssets();
+      } catch (err) {
+        toast(err.message, "error");
+      }
+    })();
+  });
 
   loadAssets();
 </script>

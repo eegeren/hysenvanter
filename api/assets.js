@@ -180,6 +180,22 @@ export default async function handler(req, res) {
     if (req.method === "DELETE") {
       if (!requireAdmin(req, res)) return;
 
+      const bulkIds = Array.isArray(body.ids)
+        ? [...new Set(body.ids.map((x) => String(x || "").trim()).filter(Boolean))]
+        : [];
+
+      if (bulkIds.length > 0) {
+        if (!pool) {
+          const existing = await readLocalAssets();
+          const remove = new Set(bulkIds);
+          await writeLocalAssets(existing.filter((item) => !remove.has(item.id)));
+          return send(res, 200, { ok: true, deleted: bulkIds.length });
+        }
+
+        await pool.query(`DELETE FROM assets WHERE id = ANY($1::text[])`, [bulkIds]);
+        return send(res, 200, { ok: true, deleted: bulkIds.length });
+      }
+
       const id = String(req.query?.id || body.id || "").trim();
 
       if (!pool) {
