@@ -903,6 +903,7 @@
     const stokN = assets.filter((a) => a.durum === "Stokta").length;
     const digerN = Math.max(0, total - stokN);
     const stokPct = total ? Math.round((stokN / total) * 100) : 0;
+    const digerPct = total ? Math.round((digerN / total) * 100) : 0;
     const elStok = document.getElementById("dash-stok-pct");
     const elDiger = document.getElementById("dash-diger-pct");
     const bar = document.getElementById("dash-stok-bar");
